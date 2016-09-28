@@ -60,6 +60,8 @@ type
     procedure btn_DeleteClick(Sender: TObject);
     procedure btn_MKDirectoryClick(Sender: TObject);
     procedure btn_UploadDirectoryClick(Sender: TObject);
+    procedure tv1Expanding(Sender: TObject; Node: TTreeNode;
+      var AllowExpansion: Boolean);
   private
     FTransferrignData: Boolean;    //是否在传输数据
     FBytesToTransfer: LongWord;    //传输的字节大小
@@ -169,7 +171,7 @@ begin
     lst_ServerList.Items.Assign(LS);
   finally
     LS.Free;
-  end;   
+  end;
 end;
 {-------------------------------------------------------------------------------
  Description: 进入目录按钮
@@ -520,6 +522,64 @@ begin
       Self.ChageDir(temp);
     end;
   end;  
+end;
+
+procedure TForm1.tv1Expanding(Sender: TObject; Node: TTreeNode;
+  var AllowExpansion: Boolean);
+var
+  ItemCount,Index,level,icount,ipostion:integer;
+  Itemstr,strPath:string;
+  isDir:Boolean;
+
+  LS: TStringList;
+  i: Integer;
+  rootNode,curNode:TTreeNode;
+begin
+   if Node.Count = 0 then
+   begin
+     icount:=0;
+     level:=Node.Level;
+     rootNode:=node;
+     strPath:=Node.Text+'/';
+     while level<>1 do
+     begin
+       strPath:=rootNode.Parent.Text+'/'+strPath;
+       rootNode:=rootNode.Parent;
+       level:=level-1;
+     end;
+     strPath:='/'+strPath;
+
+     ShowMessage(strPath);
+
+     LS := TStringList.Create;
+     try
+      idftp_Client.ChangeDir(AnsiToUtf8(strPath));
+      idftp_Client.TransferType := ftASCII;
+      edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+      idftp_Client.List(LS);
+      LS.Clear;
+      with idftp_Client.DirectoryListing do
+      begin
+        for i := 0 to Count - 1 do
+        begin
+          if (Trim(Items[i].FileName)<>'.') and (Trim(Items[i].FileName) <> '..') then
+          begin
+            curNode:=tv1.Items.AddChild(node,Utf8ToAnsi(Trim(Items[i].FileName)));
+            curNode.HasChildren :=(Items[i].ItemType = ditDirectory);
+            curNode.ImageIndex := 0;
+            curNode.SelectedIndex := 1;
+            icount:=icount+1;
+          end;
+        end;
+        if icount=0 then
+          node.HasChildren:=False;
+      end;
+      //lst_ServerList.Items.Clear;
+      //lst_ServerList.Items.Assign(LS);
+      finally
+        LS.Free;
+      end;
+   end;
 end;
 
 end.

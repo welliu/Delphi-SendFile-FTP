@@ -1,8 +1,8 @@
 object Form1: TForm1
-  Left = 659
-  Top = 124
+  Left = 618
+  Top = 41
   Width = 717
-  Height = 389
+  Height = 668
   Caption = 'Form1'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -178,7 +178,7 @@ object Form1: TForm1
   end
   object pb_ShowWorking: TProgressBar
     Left = 0
-    Top = 339
+    Top = 618
     Width = 701
     Height = 12
     Align = alBottom
@@ -196,12 +196,13 @@ object Form1: TForm1
     OnClick = btn_UploadDirectoryClick
   end
   object tv1: TTreeView
-    Left = 280
-    Top = 80
-    Width = 209
-    Height = 225
+    Left = 16
+    Top = 352
+    Width = 601
+    Height = 233
     Indent = 19
     TabOrder = 16
+    OnExpanding = tv1Expanding
   end
   object idftp_Client: TIdFTP
     MaxLineAction = maException
