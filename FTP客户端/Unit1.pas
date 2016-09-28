@@ -1,0 +1,510 @@
+{*******************************************************}
+{                                                       }
+{       系统名称 IdFTP完全使用                          }
+{       版权所有 (C) http://blog.csdn.net/akof1314      }
+{       单元名称 Unit1.pas                              }
+{       单元功能 在Delphi 7下实现FTP客户端              }
+{                                                       }
+{*******************************************************}
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, IdBaseComponent, IdComponent, IdTCPConnection,
+  IdTCPClient, IdFTP, IdFTPCommon, IdFTPList, ComCtrls, IdGlobal,
+  IdAntiFreezeBase, IdAntiFreeze, FileCtrl;
+
+type
+  TForm1 = class(TForm)
+    idftp_Client: TIdFTP;
+    edt_CurrentDirectory: TEdit;
+    lst_ServerList: TListBox;
+    edt_ServerAddress: TEdit;
+    edt_UserName: TEdit;
+    edt_UserPassword: TEdit;
+    lbl1: TLabel;
+    lbl2: TLabel;
+    lbl3: TLabel;
+    lbl4: TLabel;
+    btn_Connect: TButton;
+    btn_EnterDirectory: TButton;
+    btn_Back: TButton;
+    btn_Download: TButton;
+    btn_Upload: TButton;
+    btn_Delete: TButton;
+    btn_MKDirectory: TButton;
+    btn_Abort: TButton;
+    mmo_Log: TMemo;
+    pb_ShowWorking: TProgressBar;
+    dlgSave_File: TSaveDialog;
+    lbl_ShowWorking: TLabel;
+    idntfrz1: TIdAntiFreeze;
+    dlgOpen_File: TOpenDialog;
+    btn_UploadDirectory: TButton;
+    procedure btn_ConnectClick(Sender: TObject);
+    procedure btn_EnterDirectoryClick(Sender: TObject);
+    procedure btn_BackClick(Sender: TObject);
+    procedure lst_ServerListDblClick(Sender: TObject);
+    procedure btn_DownloadClick(Sender: TObject);
+    procedure idftp_ClientWork(Sender: TObject; AWorkMode: TWorkMode;
+      const AWorkCount: Integer);
+    procedure idftp_ClientWorkBegin(Sender: TObject; AWorkMode: TWorkMode;
+      const AWorkCountMax: Integer);
+    procedure idftp_ClientWorkEnd(Sender: TObject; AWorkMode: TWorkMode);
+    procedure FormCreate(Sender: TObject);
+    procedure btn_AbortClick(Sender: TObject);
+    procedure btn_UploadClick(Sender: TObject);
+    procedure btn_DeleteClick(Sender: TObject);
+    procedure btn_MKDirectoryClick(Sender: TObject);
+    procedure btn_UploadDirectoryClick(Sender: TObject);
+  private
+    FTransferrignData: Boolean;    //是否在传输数据
+    FBytesToTransfer: LongWord;    //传输的字节大小
+    FAbortTransfer: Boolean;       //取消数据传输
+    STime : TDateTime;             //时间
+    FAverageSpeed : Double;        //平均速度
+    procedure ChageDir(DirName: String);
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+{-------------------------------------------------------------------------------
+ Description: 窗体创建函数
+-------------------------------------------------------------------------------}
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  Self.DoubleBuffered := True;     //开启双缓冲，使得lbl_ShowWorking描述不闪烁
+  idntfrz1.IdleTimeOut := 50;
+  idntfrz1.OnlyWhenIdle := False;
+end;
+{-------------------------------------------------------------------------------
+ Description: 连接、断开连接
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_ConnectClick(Sender: TObject);
+begin
+  btn_Connect.Enabled := False;
+  if idftp_Client.Connected then
+  begin
+    //已连接
+    try
+      if FTransferrignData then      //是否数据在传输
+        idftp_Client.Abort;
+      idftp_Client.Quit;
+    finally
+      btn_Connect.Caption := '连接';
+      edt_CurrentDirectory.Text := '/';
+      lst_ServerList.Items.Clear;
+      btn_Connect.Enabled := True;
+      mmo_Log.Lines.Add(DateTimeToStr(Now) + '断开服务器');
+    end;   
+  end
+  else
+  begin
+    //未连接
+    with idftp_Client do
+    try
+      Passive := True; //被动模式
+      Username := Trim(edt_UserName.Text);
+      Password := Trim(edt_UserPassword.Text);
+      Host := Trim(edt_ServerAddress.Text);
+      Connect();
+      Self.ChageDir(edt_CurrentDirectory.Text);
+    finally
+      btn_Connect.Enabled := True;
+      if Connected then
+        btn_Connect.Caption := '断开连接';
+        mmo_Log.Lines.Add(DateTimeToStr(Now) + '连接服务器');
+    end;
+  end;
+end;
+{-------------------------------------------------------------------------------
+ Description: 改变目录
+-------------------------------------------------------------------------------}
+procedure TForm1.ChageDir(DirName: String);
+var
+  LS: TStringList;
+  i: Integer;
+begin
+  LS := TStringList.Create;
+  try
+    idftp_Client.ChangeDir(AnsiToUtf8(DirName));
+    idftp_Client.TransferType := ftASCII;
+    edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+    idftp_Client.List(LS);
+    LS.Clear;
+    with idftp_Client.DirectoryListing do
+    begin
+      for i := 0 to Count - 1 do
+      begin
+        if Items[i].ItemType = ditDirectory then
+          LS.Add(Format('%-22s%15s%-10s%s',[Trim(Utf8ToAnsi(Items[i].FileName)),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]))
+        else
+          LS.Add(Format('%-22s%15s%-10s%s',[Trim(Utf8ToAnsi(Items[i].FileName)),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
+      end;
+    end;
+    lst_ServerList.Items.Clear;
+    lst_ServerList.Items.Assign(LS);
+  finally
+    LS.Free;
+  end;   
+end;
+{-------------------------------------------------------------------------------
+ Description: 进入目录按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_EnterDirectoryClick(Sender: TObject);
+begin
+  Self.ChageDir(edt_CurrentDirectory.Text);
+end;
+{-------------------------------------------------------------------------------
+ Description: 后退按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_BackClick(Sender: TObject);
+begin
+  Self.ChageDir('..');
+end;
+{-------------------------------------------------------------------------------
+ Description: 双击文件夹名称，进入该目录
+-------------------------------------------------------------------------------}
+procedure TForm1.lst_ServerListDblClick(Sender: TObject);
+begin
+  if not idftp_Client.Connected then
+    Exit;
+  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
+    Self.ChageDir(Utf8ToAnsi(idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName));
+end;
+{-------------------------------------------------------------------------------
+ Description: 下载按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_DownloadClick(Sender: TObject);
+ procedure DownloadDirectory(var idFTP: TIdFtp;LocalDir, RemoteDir: string);
+ var
+   i,DirCount: Integer;
+   strName: string;
+ begin
+   if not DirectoryExists(LocalDir + RemoteDir) then
+   begin
+     ForceDirectories(LocalDir + RemoteDir);  //创建一个全路径的文件夹
+     mmo_Log.Lines.Add('建立目录：' + LocalDir + RemoteDir);
+   end;
+   idFTP.ChangeDir(AnsiToUtf8(RemoteDir));
+   idFTP.TransferType := ftASCII;
+   idFTP.List(nil);
+   DirCount := idFTP.DirectoryListing.Count;
+   for i := 0 to DirCount - 1 do
+   begin
+     strName := Utf8ToAnsi(idFTP.DirectoryListing.Items[i].FileName);
+     mmo_Log.Lines.Add('解析文件：' + strName);
+     if idFTP.DirectoryListing.Items[i].ItemType = ditDirectory then
+       if (strName = '.') or (strName = '..') then
+         Continue
+       else
+       begin
+         DownloadDirectory(idFTP,LocalDir + RemoteDir + '\', strName);
+         idFTP.ChangeDir('..');
+         idFTP.List(nil);
+       end
+     else
+     begin
+       if (ExtractFileExt(strName) = '.txt') or (ExtractFileExt(strName) = '.html') or (ExtractFileExt(strName) = '.htm') then
+         idFTP.TransferType := ftASCII    //文本模式
+       else
+         idFTP.TransferType := ftBinary;   //二进制模式
+       FBytesToTransfer := idFTP.Size(AnsiToUtf8(strName));        ;
+       idFTP.Get(AnsiToUtf8(strName), LocalDir + RemoteDir + '\' + strName, True);
+       mmo_Log.Lines.Add('下载文件：' + strName);
+     end;
+     Application.ProcessMessages;
+   end;
+ end;
+var
+  strName: string;
+  strDirectory: string;
+begin
+  if not idftp_Client.Connected then
+    Exit;
+  btn_Download.Enabled := False;
+  strName := idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
+  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
+  begin
+    if SelectDirectory('选择目录保存路径','',strDirectory) then
+    begin
+      DownloadDirectory(idftp_Client,strDirectory + '\',Utf8ToAnsi(strName));
+      idftp_Client.ChangeDir('..');
+      idftp_Client.List(nil);
+    end;
+  end
+  else
+  begin
+    //下载单个文件
+    dlgSave_File.FileName := Utf8ToAnsi(strName);
+    if dlgSave_File.Execute then
+    begin
+      idftp_Client.TransferType := ftBinary;
+      FBytesToTransfer := idftp_Client.Size(strName);
+      if FileExists(dlgSave_File.FileName) then
+      begin
+        case MessageDlg('文件已经存在，是否要继续下载？',  mtConfirmation, mbYesNoCancel, 0) of
+          mrCancel:  //退出操作
+            begin
+              Exit;
+            end;
+          mrYes:    //断点继续下载文件
+            begin
+              FBytesToTransfer := FBytesToTransfer - FileSizeByName(strName);
+              idftp_Client.Get(strName,dlgSave_File.FileName,False,True);
+            end;
+          mrNo:     //从头开始下载文件
+            begin
+              idftp_Client.Get(strName,dlgSave_File.FileName,True);
+            end;
+        end;
+      end
+      else
+        idftp_Client.Get(strName, dlgSave_File.FileName, False);
+    end;  
+  end;
+  btn_Download.Enabled := True;
+end;
+{-------------------------------------------------------------------------------
+ Description: 读写操作的工作事件
+-------------------------------------------------------------------------------}
+procedure TForm1.idftp_ClientWork(Sender: TObject; AWorkMode: TWorkMode;
+  const AWorkCount: Integer);
+Var
+  S: String;
+  TotalTime: TDateTime;
+  H, M, Sec, MS: Word;
+  DLTime: Double;
+begin
+  TotalTime :=  Now - STime;      //已花费的时间
+  DecodeTime(TotalTime, H, M, Sec, MS);  //解码时间
+  Sec := Sec + M * 60 + H * 3600;  //转换成以秒计算
+  DLTime := Sec + MS / 1000;      //精确到毫秒
+  if DLTime > 0 then
+    FAverageSpeed := (AWorkCount / 1024) / DLTime;   //求平均速度
+  if FAverageSpeed > 0 then
+  begin
+    Sec := Trunc(((pb_ShowWorking.Max - AWorkCount) / 1024) / FAverageSpeed);
+    S := Format('%2d:%2d:%2d', [Sec div 3600, (Sec div 60) mod 60, Sec mod 60]);
+    S := '剩余时间 ' + S;
+  end
+  else
+    S := '';
+  S := FormatFloat('0.00 KB/s', FAverageSpeed) + '; ' + S;
+  case AWorkMode of
+    wmRead: lbl_ShowWorking.Caption := '下载速度 ' + S;
+    wmWrite: lbl_ShowWorking.Caption := '上传速度 ' + S;
+  end;
+  if FAbortTransfer then   //取消数据传输
+    idftp_Client.Abort;
+  pb_ShowWorking.Position := AWorkCount;
+  FAbortTransfer := false;
+end;
+{-------------------------------------------------------------------------------
+ Description: 开始读写操作的事件
+-------------------------------------------------------------------------------}
+procedure TForm1.idftp_ClientWorkBegin(Sender: TObject;
+  AWorkMode: TWorkMode; const AWorkCountMax: Integer);
+begin
+  FTransferrignData := True;
+  btn_Abort.Enabled := True;
+  FAbortTransfer := False;
+  STime := Now;
+  if AWorkCountMax > 0 then
+    pb_ShowWorking.Max := AWorkCountMax
+  else
+    pb_ShowWorking.Max := FBytesToTransfer;
+  FAverageSpeed := 0;
+end;
+{-------------------------------------------------------------------------------
+ Description: 读写操作完成之后的事件
+-------------------------------------------------------------------------------}
+procedure TForm1.idftp_ClientWorkEnd(Sender: TObject;
+  AWorkMode: TWorkMode);
+begin
+  btn_Abort.Enabled := False;
+  FTransferrignData := False;
+  FBytesToTransfer := 0;
+  pb_ShowWorking.Position := 0;
+  FAverageSpeed := 0;
+  lbl_ShowWorking.Caption := '传输完成';
+end;
+{-------------------------------------------------------------------------------
+ Description: 取消按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_AbortClick(Sender: TObject);
+begin
+  FAbortTransfer := True;
+end;
+{-------------------------------------------------------------------------------
+ Description: 上传按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_UploadClick(Sender: TObject);
+begin
+  if idftp_Client.Connected then
+  begin
+    if dlgOpen_File.Execute then
+    begin
+      idftp_Client.TransferType := ftBinary;
+      idftp_Client.Put(dlgOpen_File.FileName, AnsiToUtf8(ExtractFileName(dlgOpen_File.FileName)));
+      ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+    end;
+  end;  
+end;
+{-------------------------------------------------------------------------------
+ Description: 删除按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_DeleteClick(Sender: TObject);
+  procedure DeleteDirectory(var idFTP: TIdFtp; RemoteDir: string);
+  var
+    i,DirCount: Integer;
+    strName: string;
+  begin
+    idFTP.List(nil);
+    DirCount := idFTP.DirectoryListing.Count;
+    if DirCount = 2 then
+    begin
+      idFTP.ChangeDir('..');
+      idFTP.RemoveDir(RemoteDir);
+      idFTP.List(nil);
+      Application.ProcessMessages;
+      mmo_Log.Lines.Add('删除文件夹：' + Utf8ToAnsi(RemoteDir));
+      Exit;
+    end;
+    for i := 0 to 2 do
+    begin
+      strName := idFTP.DirectoryListing.Items[i].FileName;
+      if idFTP.DirectoryListing.Items[i].ItemType = ditDirectory then
+      begin
+        if (strName = '.') or (strName = '..') then
+         Continue;
+        idFTP.ChangeDir(strName);
+        DeleteDirectory(idFTP,strName);
+        DeleteDirectory(idFTP,RemoteDir);
+      end
+      else
+      begin
+        idFTP.Delete(strName);
+        Application.ProcessMessages;
+        mmo_Log.Lines.Add('删除文件：' + Utf8ToAnsi(strName));
+        DeleteDirectory(idFTP,RemoteDir);
+      end;  
+    end;
+  end;
+Var
+  strName: String;
+begin
+  if not idftp_Client.Connected then
+    exit;
+  strName := idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
+  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
+    try
+      idftp_Client.ChangeDir(strName);
+      DeleteDirectory(idftp_Client,strName);
+      ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+    finally
+    end
+  else       //删除单个文件
+    try
+      idftp_Client.Delete(strName);
+      ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+    finally
+    end;
+end;
+{-------------------------------------------------------------------------------
+ Description: 新建目录按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_MKDirectoryClick(Sender: TObject);
+var
+  S: string;
+begin
+  if InputQuery('新建目录','文件夹名称',S) and (Trim(S) <> '') then
+  begin
+    idftp_Client.MakeDir(AnsiToUtf8(S));
+    Self.ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+  end;
+end;
+{-------------------------------------------------------------------------------
+ Description: 上传目录按钮
+-------------------------------------------------------------------------------}
+procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
+  function DoUploadDir(idftp:TIdFTP;sDirName:String;sToDirName:String):Boolean;
+  var
+    hFindFile:Cardinal;
+    tfile:String;
+    sCurDir:String[255];
+    FindFileData:WIN32_FIND_DATA;
+  begin
+    //先保存当前目录
+    sCurDir:=GetCurrentDir;
+    ChDir(sDirName);
+    idFTP.ChangeDir(AnsiToUtf8(sToDirName));
+    hFindFile:=FindFirstFile( '*.* ',FindFileData);
+    Application.ProcessMessages;
+    if hFindFile<>INVALID_HANDLE_VALUE then
+    begin
+      repeat
+        tfile:=FindFileData.cFileName;
+        if (tfile= '.') or (tfile= '..') then
+              Continue;
+        if FindFileData.dwFileAttributes=FILE_ATTRIBUTE_DIRECTORY then
+        begin
+          try
+            IdFTP.MakeDir(AnsiToUtf8(tfile));
+            mmo_Log.Lines.Add('新建文件夹：' + tfile);
+          except
+          end;
+          DoUploadDir(idftp,sDirName+ '\'+tfile,tfile);
+          idftp.ChangeDir('..');
+          Application.ProcessMessages;
+        end
+        else
+        begin
+          IdFTP.Put(tfile, AnsiToUtf8(tfile));
+          mmo_Log.Lines.Add('上传文件：' + tfile);
+          Application.ProcessMessages;
+        end;
+      until   FindNextFile(hFindFile,FindFileData)=false;
+    end
+    else
+    begin
+      ChDir(sCurDir);
+      result:=false;
+      exit;
+    end;
+    //回到原来的目录下
+    ChDir(sCurDir);
+    result:=true;
+  end;
+var
+  strPath,strToPath,temp: string;
+begin
+  if idftp_Client.Connected then
+  begin
+    if SelectDirectory('选择上传目录','',strPath) then
+    begin
+      temp := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+      strToPath := temp;
+      if Length(strToPath) = 1 then
+        strToPath := strToPath +  ExtractFileName(strPath)
+      else
+        strToPath := strToPath + '/' +  ExtractFileName(strPath);
+      try
+        idftp_Client.MakeDir(AnsiToUtf8(ExtractFileName(strPath)));
+      except
+      end;
+      DoUploadDir(idftp_Client,strPath,strToPath);
+      Self.ChageDir(temp);
+    end;
+  end;  
+end;
+
+end.
