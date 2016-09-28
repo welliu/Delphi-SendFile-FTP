@@ -44,6 +44,7 @@ type
     dlgOpen_File: TOpenDialog;
     btn_UploadDirectory: TButton;
     tv1: TTreeView;
+    btn_Fresh: TButton;
     procedure btn_ConnectClick(Sender: TObject);
     procedure btn_EnterDirectoryClick(Sender: TObject);
     procedure btn_BackClick(Sender: TObject);
@@ -62,6 +63,8 @@ type
     procedure btn_UploadDirectoryClick(Sender: TObject);
     procedure tv1Expanding(Sender: TObject; Node: TTreeNode;
       var AllowExpansion: Boolean);
+    procedure btn_FreshClick(Sender: TObject);
+    procedure tv1Change(Sender: TObject; Node: TTreeNode);
   private
     FTransferrignData: Boolean;    //是否在传输数据
     FBytesToTransfer: LongWord;    //传输的字节大小
@@ -69,16 +72,43 @@ type
     STime : TDateTime;             //时间
     FAverageSpeed : Double;        //平均速度
     procedure ChageDir(DirName: String);
+    procedure FreshTree(DirName: String);
   public
     { Public declarations }
   end;
 
 var
   Form1: TForm1;
+  const orginDir = '/';
+  
+function getNodePath(Node:TTreeNode):string;
 
 implementation
 
 {$R *.dfm}
+
+function getNodePath(Node:TTreeNode):string;
+var
+  strPath:string;
+  level:Integer;
+  curNode:TTreeNode;
+begin
+  if Node.Parent = nil then
+  begin
+    result:=orginDir;
+    Exit;
+  end;
+  level:=Node.Level;
+  curNode:=node;
+  strPath:=Node.Text+'/';
+  while level>1 do
+  begin
+    strPath:=curNode.Parent.Text+'/'+strPath;
+    curNode:=curNode.Parent;
+    level:=level-1;
+  end;
+  result:=orginDir+strPath;
+end;
 {-------------------------------------------------------------------------------
  Description: 窗体创建函数
 -------------------------------------------------------------------------------}
@@ -103,7 +133,7 @@ begin
       idftp_Client.Quit;
     finally
       btn_Connect.Caption := '连接';
-      edt_CurrentDirectory.Text := '/';
+      edt_CurrentDirectory.Text := orginDir;
       lst_ServerList.Items.Clear;
       btn_Connect.Enabled := True;
       mmo_Log.Lines.Add(DateTimeToStr(Now) + '断开服务器');
@@ -120,6 +150,9 @@ begin
       Host := Trim(edt_ServerAddress.Text);
       Connect();
       Self.ChageDir(edt_CurrentDirectory.Text);
+
+      tv1.Items.Clear;
+      Self.FreshTree(orginDir);
     finally
       btn_Connect.Enabled := True;
       if Connected then
@@ -129,9 +162,10 @@ begin
   end;
 end;
 {-------------------------------------------------------------------------------
- Description: 改变目录
+ Description: 刷新树状目录
 -------------------------------------------------------------------------------}
-procedure TForm1.ChageDir(DirName: String);
+
+procedure TForm1.FreshTree(DirName: String);
 var
   LS: TStringList;
   i: Integer;
@@ -152,26 +186,49 @@ begin
     begin
       for i := 0 to Count - 1 do
       begin
-        curNode:=tv1.Items.AddChild(rootNode,Utf8ToAnsi(Trim(Items[i].FileName)));
+        if (Trim(Items[i].FileName)<>'.') and (Trim(Items[i].FileName) <> '..') then
+          begin
+            curNode:=tv1.Items.AddChild(rootNode,Utf8ToAnsi(Trim(Items[i].FileName)));
+            curNode.HasChildren :=(Items[i].ItemType = ditDirectory);
+            curNode.ImageIndex := 0;
+            curNode.SelectedIndex := 1;
+          end;
+      end;
+    end;
+  finally
+    LS.Free;
+  end;
+end;
+{-------------------------------------------------------------------------------
+ Description: 改变目录
+-------------------------------------------------------------------------------}
+procedure TForm1.ChageDir(DirName: String);
+var
+  LS: TStringList;
+  i: Integer;
+begin
+  LS := TStringList.Create;
+  try
+    idftp_Client.ChangeDir(AnsiToUtf8(DirName));
+    idftp_Client.TransferType := ftASCII;
+    edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+    idftp_Client.List(LS);
+    LS.Clear;
+    with idftp_Client.DirectoryListing do
+    begin
+      for i := 0 to Count - 1 do
+      begin
         if Items[i].ItemType = ditDirectory then
-        begin
-          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Items[i].FileName),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]));
-          curNode.HasChildren :=true;
-        end
+          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Trim(Items[i].FileName)),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]))
         else
-        begin
-          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Items[i].FileName),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
-          curNode.HasChildren :=false;
-        end;
-        curNode.ImageIndex := 0;
-        curNode.SelectedIndex := 1;
+          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Trim(Items[i].FileName)),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
       end;
     end;
     lst_ServerList.Items.Clear;
     lst_ServerList.Items.Assign(LS);
   finally
     LS.Free;
-  end;
+  end;   
 end;
 {-------------------------------------------------------------------------------
  Description: 进入目录按钮
@@ -524,32 +581,21 @@ begin
   end;  
 end;
 
+
 procedure TForm1.tv1Expanding(Sender: TObject; Node: TTreeNode;
   var AllowExpansion: Boolean);
 var
-  ItemCount,Index,level,icount,ipostion:integer;
+  ItemCount,Index,icount,ipostion:integer;
   Itemstr,strPath:string;
   isDir:Boolean;
-
+  curNode:TTreeNode;
   LS: TStringList;
   i: Integer;
-  rootNode,curNode:TTreeNode;
 begin
    if Node.Count = 0 then
    begin
      icount:=0;
-     level:=Node.Level;
-     rootNode:=node;
-     strPath:=Node.Text+'/';
-     while level<>1 do
-     begin
-       strPath:=rootNode.Parent.Text+'/'+strPath;
-       rootNode:=rootNode.Parent;
-       level:=level-1;
-     end;
-     strPath:='/'+strPath;
-
-     ShowMessage(strPath);
+     strPath:=getNodePath(Node);
 
      LS := TStringList.Create;
      try
@@ -574,12 +620,26 @@ begin
         if icount=0 then
           node.HasChildren:=False;
       end;
-      //lst_ServerList.Items.Clear;
-      //lst_ServerList.Items.Assign(LS);
       finally
         LS.Free;
       end;
    end;
+end;
+
+procedure TForm1.btn_FreshClick(Sender: TObject);
+begin
+  tv1.Items.Clear;
+  Self.FreshTree(orginDir);
+end;
+
+
+procedure TForm1.tv1Change(Sender: TObject; Node: TTreeNode);
+var
+  strPath:string;
+begin
+  strPath:=getNodePath(Node);
+  edt_CurrentDirectory.Text:=strPath;
+  Self.ChageDir(strPath);
 end;
 
 end.
