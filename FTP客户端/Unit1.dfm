@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 700
-  Top = 213
+  Left = 659
+  Top = 124
   Width = 717
   Height = 389
   Caption = 'Form1'
@@ -60,7 +60,7 @@ object Form1: TForm1
   object lst_ServerList: TListBox
     Left = 16
     Top = 80
-    Width = 409
+    Width = 257
     Height = 225
     TabStop = False
     ImeName = #20013#25991'('#31616#20307') - '#25628#29399#25340#38899#36755#20837#27861
@@ -124,9 +124,9 @@ object Form1: TForm1
     OnClick = btn_BackClick
   end
   object mmo_Log: TMemo
-    Left = 432
+    Left = 496
     Top = 80
-    Width = 265
+    Width = 201
     Height = 225
     ImeName = #20013#25991'('#31616#20307') - '#25628#29399#25340#38899#36755#20837#27861
     TabOrder = 8
@@ -194,6 +194,14 @@ object Form1: TForm1
     Caption = #19978#20256#30446#24405
     TabOrder = 15
     OnClick = btn_UploadDirectoryClick
+  end
+  object tv1: TTreeView
+    Left = 280
+    Top = 80
+    Width = 209
+    Height = 225
+    Indent = 19
+    TabOrder = 16
   end
   object idftp_Client: TIdFTP
     MaxLineAction = maException

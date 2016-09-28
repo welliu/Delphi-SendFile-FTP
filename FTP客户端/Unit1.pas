@@ -43,6 +43,7 @@ type
     idntfrz1: TIdAntiFreeze;
     dlgOpen_File: TOpenDialog;
     btn_UploadDirectory: TButton;
+    tv1: TTreeView;
     procedure btn_ConnectClick(Sender: TObject);
     procedure btn_EnterDirectoryClick(Sender: TObject);
     procedure btn_BackClick(Sender: TObject);
@@ -132,6 +133,7 @@ procedure TForm1.ChageDir(DirName: String);
 var
   LS: TStringList;
   i: Integer;
+  rootNode,curNode:TTreeNode;
 begin
   LS := TStringList.Create;
   try
@@ -140,14 +142,27 @@ begin
     edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
     idftp_Client.List(LS);
     LS.Clear;
+
+    rootNode:=tv1.Items.AddFirst(nil,Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+    rootNode.HasChildren:=True;
+
     with idftp_Client.DirectoryListing do
     begin
       for i := 0 to Count - 1 do
       begin
+        curNode:=tv1.Items.AddChild(rootNode,Utf8ToAnsi(Trim(Items[i].FileName)));
         if Items[i].ItemType = ditDirectory then
-          LS.Add(Format('%-22s%15s%-10s%s',[Trim(Utf8ToAnsi(Items[i].FileName)),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]))
+        begin
+          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Items[i].FileName),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]));
+          curNode.HasChildren :=true;
+        end
         else
-          LS.Add(Format('%-22s%15s%-10s%s',[Trim(Utf8ToAnsi(Items[i].FileName)),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
+        begin
+          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Items[i].FileName),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
+          curNode.HasChildren :=false;
+        end;
+        curNode.ImageIndex := 0;
+        curNode.SelectedIndex := 1;
       end;
     end;
     lst_ServerList.Items.Clear;
