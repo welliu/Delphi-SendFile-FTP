@@ -1,7 +1,8 @@
 object Form1: TForm1
-  Left = 636
-  Top = 124
-  BorderStyle = bsDialog
+  Left = 602
+  Top = 154
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
   Caption = 'Form1'
   ClientHeight = 508
   ClientWidth = 702
@@ -73,9 +74,9 @@ object Form1: TForm1
     OnClick = btn_ConnectClick
   end
   object mmo_Log: TMemo
-    Left = 8
-    Top = 328
-    Width = 681
+    Left = 6
+    Top = 336
+    Width = 689
     Height = 161
     ImeName = #20013#25991'('#31616#20307') - '#25628#29399#25340#38899#36755#20837#27861
     ReadOnly = True

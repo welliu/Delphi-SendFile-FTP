@@ -257,67 +257,55 @@ end;
 -------------------------------------------------------------------------------}
 procedure TForm1.ChageDir(DirName: String);
 var
-  LS: TStringList;
   i: Integer;
 begin
-  LS := TStringList.Create;
-  try
-    idftp_Client.ChangeDir(AnsiToUtf8(DirName));
-    idftp_Client.TransferType := ftASCII;
-    nodePath := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
-    idftp_Client.List(LS);
-    LS.Clear;
+  idftp_Client.ChangeDir(AnsiToUtf8(DirName));
+  idftp_Client.TransferType := ftASCII;
+  nodePath := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+  idftp_Client.List(nil);
 
-    ds1:=TClientDataSet.Create(nil);
-    ds1.FieldDefs.Add('文件名',ftString,100,true);
-    ds1.FieldDefs.Add('大小',ftString,100,true);
-    ds1.FieldDefs.Add('类型',ftString,10,true);
-    ds1.FieldDefs.Add('修改日期',ftString,100,true);
-    ds1.CreateDataSet;
-    ds1.Open;
+  ds1:=TClientDataSet.Create(nil);
+  ds1.FieldDefs.Add('文件名',ftString,100,true);
+  ds1.FieldDefs.Add('大小',ftString,100,true);
+  ds1.FieldDefs.Add('类型',ftString,10,true);
+  ds1.FieldDefs.Add('修改日期',ftString,100,true);
+  ds1.CreateDataSet;
+  ds1.Open;
 
-    with idftp_Client.DirectoryListing do
+  with idftp_Client.DirectoryListing do
+  begin
+    for i := 0 to Count - 1 do
     begin
-      for i := 0 to Count - 1 do
+      if (Trim(Items[i].FileName) = '.')or(Trim(Items[i].FileName)='..')then
+        Continue;
+      ds1.Append;
+      ds1.FieldByName('文件名').AsString:=Utf8ToAnsi(Trim(Items[i].FileName));
+      ds1.FieldByName('修改日期').AsString:=DateTimeToStr(Items[i].ModifiedDate);
+      if Items[i].ItemType = ditDirectory then
       begin
-        if (Trim(Items[i].FileName) = '.')or(Trim(Items[i].FileName)='..')then
-          Continue;
-
-        ds1.Append;
-        ds1.FieldByName('文件名').AsString:=Utf8ToAnsi(Trim(Items[i].FileName));
-        ds1.FieldByName('修改日期').AsString:=DateTimeToStr(Items[i].ModifiedDate);
-
-        if Items[i].ItemType = ditDirectory then
-        begin
-          ds1.FieldByName('类型').AsString:='文件夹';
-          ds1.FieldByName('大小').AsString:='...';
-        end
+        ds1.FieldByName('类型').AsString:='文件夹';
+        ds1.FieldByName('大小').AsString:='...';
+      end
+      else
+      begin
+        ds1.FieldByName('类型').AsString:=' 文件';
+        if Items[i].Size/(1024*10) < 1 then
+          ds1.FieldByName('大小').AsString:=IntToStr(Items[i].Size)+' B'
+        else if Items[i].Size/(1024*1024) < 1 then
+          ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024)])+' K'
         else
-        begin
-          ds1.FieldByName('类型').AsString:=' 文件';
-          if Items[i].Size/(1024*10) < 1 then
-            ds1.FieldByName('大小').AsString:=IntToStr(Items[i].Size)+' B'
-          else if Items[i].Size/(1024*1024) < 1 then
-            ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024)])+' K'
-          else
-            ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024*1024)])+' M';
-        end;
+          ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024*1024)])+' M';
       end;
     end;
-
-    ds2.DataSet:=ds1;
-    dbgrd1.DataSource:=ds2;
-
-
-     dbgrd1.Columns.Items[0].Width:=127;
-     dbgrd1.Columns.Items[1].Width:=60;
-     dbgrd1.Columns.Items[2].Width:=40;
-     dbgrd1.Columns.Items[3].Width:=120;
-
-     dbgrd1.Perform(WM_VSCROLL,SB_TOP,0);
-  finally
-    LS.Free;
   end;
+  ds2.DataSet:=ds1;
+  dbgrd1.DataSource:=ds2;
+
+  dbgrd1.Columns.Items[0].Width:=127;
+  dbgrd1.Columns.Items[1].Width:=60;
+  dbgrd1.Columns.Items[2].Width:=40;
+  dbgrd1.Columns.Items[3].Width:=120;
+  dbgrd1.Perform(WM_VSCROLL,SB_TOP,0);
 end;
 {-------------------------------------------------------------------------------
  Description: 下载按钮
