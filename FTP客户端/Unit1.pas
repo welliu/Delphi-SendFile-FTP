@@ -14,23 +14,18 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdFTP, IdFTPCommon, IdFTPList, ComCtrls, IdGlobal,
-  IdAntiFreezeBase, IdAntiFreeze, FileCtrl;
+  IdAntiFreezeBase, IdAntiFreeze, FileCtrl, Grids, DBGrids, DB, DBClient;
 
 type
   TForm1 = class(TForm)
     idftp_Client: TIdFTP;
-    edt_CurrentDirectory: TEdit;
-    lst_ServerList: TListBox;
-    edt_ServerAddress: TEdit;
+    edt_ServerAddress:TEdit;
     edt_UserName: TEdit;
     edt_UserPassword: TEdit;
     lbl1: TLabel;
     lbl2: TLabel;
     lbl3: TLabel;
-    lbl4: TLabel;
     btn_Connect: TButton;
-    btn_EnterDirectory: TButton;
-    btn_Back: TButton;
     btn_Download: TButton;
     btn_Upload: TButton;
     btn_Delete: TButton;
@@ -39,16 +34,16 @@ type
     mmo_Log: TMemo;
     pb_ShowWorking: TProgressBar;
     dlgSave_File: TSaveDialog;
-    lbl_ShowWorking: TLabel;
     idntfrz1: TIdAntiFreeze;
     dlgOpen_File: TOpenDialog;
     btn_UploadDirectory: TButton;
     tv1: TTreeView;
     btn_Fresh: TButton;
+    stat1: TStatusBar;
+    dbgrd1: TDBGrid;
+    ds1: TClientDataSet;
+    ds2: TDataSource;
     procedure btn_ConnectClick(Sender: TObject);
-    procedure btn_EnterDirectoryClick(Sender: TObject);
-    procedure btn_BackClick(Sender: TObject);
-    procedure lst_ServerListDblClick(Sender: TObject);
     procedure btn_DownloadClick(Sender: TObject);
     procedure idftp_ClientWork(Sender: TObject; AWorkMode: TWorkMode;
       const AWorkCount: Integer);
@@ -73,19 +68,44 @@ type
     FAverageSpeed : Double;        //平均速度
     procedure ChageDir(DirName: String);
     procedure FreshTree(DirName: String);
+    function CheckState:Boolean;
   public
-    { Public declarations }
+    nodePath:string;
   end;
+
+
 
 var
   Form1: TForm1;
-  const orginDir = '/';
+const
+  orginDir = '/';
+  formName = '客户端 ';
   
 function getNodePath(Node:TTreeNode):string;
+function isDirectory(var idftp_Client:TIdFTP;parentPath,fileName:String):Boolean;
 
 implementation
 
 {$R *.dfm}
+function isDirectory(var idftp_Client:TIdFTP;parentPath,fileName:String):Boolean;
+var
+  i:Integer;
+begin
+  idftp_Client.ChangeDir(Trim(AnsiToUtf8(parentPath)));
+  idftp_Client.TransferType := ftASCII;
+  idftp_Client.List(nil);
+  with idftp_Client.DirectoryListing do
+  begin
+    for i := 0 to Count - 1 do
+    begin
+      if Utf8ToAnsi(Trim(Items[i].FileName))= Trim(fileName) then
+      begin
+        result:=(Items[i].ItemType = ditDirectory);
+        Break;
+      end;
+    end
+  end;
+end;
 
 function getNodePath(Node:TTreeNode):string;
 var
@@ -117,6 +137,7 @@ begin
   Self.DoubleBuffered := True;     //开启双缓冲，使得lbl_ShowWorking描述不闪烁
   idntfrz1.IdleTimeOut := 50;
   idntfrz1.OnlyWhenIdle := False;
+  Self.nodePath:=orginDir;
 end;
 {-------------------------------------------------------------------------------
  Description: 连接、断开连接
@@ -133,11 +154,10 @@ begin
       idftp_Client.Quit;
     finally
       btn_Connect.Caption := '连接';
-      edt_CurrentDirectory.Text := orginDir;
-      lst_ServerList.Items.Clear;
+      nodePath := orginDir;
       btn_Connect.Enabled := True;
       mmo_Log.Lines.Add(DateTimeToStr(Now) + '断开服务器');
-    end;   
+    end;
   end
   else
   begin
@@ -149,7 +169,7 @@ begin
       Password := Trim(edt_UserPassword.Text);
       Host := Trim(edt_ServerAddress.Text);
       Connect();
-      Self.ChageDir(edt_CurrentDirectory.Text);
+      Self.ChageDir(nodePath);
 
       tv1.Items.Clear;
       Self.FreshTree(orginDir);
@@ -162,20 +182,50 @@ begin
   end;
 end;
 {-------------------------------------------------------------------------------
+ Description: 查看状态
+-------------------------------------------------------------------------------}
+function TForm1.CheckState:Boolean;
+begin
+  if not idftp_Client.Connected then
+  begin
+    ShowMessage('无法连接服务器！');
+    result:=false;
+    Exit;
+  end;
+  if tv1.Selected=nil then
+  begin
+    ShowMessage('请在目录树中选择要传输的文件！');
+    result:=false;
+    Exit;
+  end;
+  result:=True;
+end;
+{-------------------------------------------------------------------------------
  Description: 刷新树状目录
 -------------------------------------------------------------------------------}
-
 procedure TForm1.FreshTree(DirName: String);
+  procedure ShowTree;
+  var
+    node:TTreeNode;
+  begin
+    tv1.HideSelection:=false;
+    node:=tv1.Items.Item[0];
+    while node.getFirstChild <> nil do
+      node:=node.getFirstChild;
+    node.Selected:=true;
+  end;
 var
   LS: TStringList;
   i: Integer;
   rootNode,curNode:TTreeNode;
 begin
+  tv1.Items.Clear;
+
   LS := TStringList.Create;
   try
     idftp_Client.ChangeDir(AnsiToUtf8(DirName));
     idftp_Client.TransferType := ftASCII;
-    edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+    nodePath := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
     idftp_Client.List(LS);
     LS.Clear;
 
@@ -198,61 +248,64 @@ begin
   finally
     LS.Free;
   end;
+
+  //ShowTree;
 end;
+
 {-------------------------------------------------------------------------------
  Description: 改变目录
 -------------------------------------------------------------------------------}
 procedure TForm1.ChageDir(DirName: String);
 var
-  LS: TStringList;
   i: Integer;
 begin
-  LS := TStringList.Create;
-  try
-    idftp_Client.ChangeDir(AnsiToUtf8(DirName));
-    idftp_Client.TransferType := ftASCII;
-    edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
-    idftp_Client.List(LS);
-    LS.Clear;
-    with idftp_Client.DirectoryListing do
+  idftp_Client.ChangeDir(AnsiToUtf8(DirName));
+  idftp_Client.TransferType := ftASCII;
+  nodePath := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+  idftp_Client.List(nil);
+
+  ds1:=TClientDataSet.Create(nil);
+  ds1.FieldDefs.Add('文件名',ftString,100,true);
+  ds1.FieldDefs.Add('大小',ftString,100,true);
+  ds1.FieldDefs.Add('类型',ftString,10,true);
+  ds1.FieldDefs.Add('修改日期',ftString,100,true);
+  ds1.CreateDataSet;
+  ds1.Open;
+
+  with idftp_Client.DirectoryListing do
+  begin
+    for i := 0 to Count - 1 do
     begin
-      for i := 0 to Count - 1 do
+      if (Trim(Items[i].FileName) = '.')or(Trim(Items[i].FileName)='..')then
+        Continue;
+      ds1.Append;
+      ds1.FieldByName('文件名').AsString:=Utf8ToAnsi(Trim(Items[i].FileName));
+      ds1.FieldByName('修改日期').AsString:=DateTimeToStr(Items[i].ModifiedDate);
+      if Items[i].ItemType = ditDirectory then
       begin
-        if Items[i].ItemType = ditDirectory then
-          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Trim(Items[i].FileName)),IntToStr(Items[i].Size),'  文件夹',DateTimeToStr(Items[i].ModifiedDate)]))
+        ds1.FieldByName('类型').AsString:='文件夹';
+        ds1.FieldByName('大小').AsString:='...';
+      end
+      else
+      begin
+        ds1.FieldByName('类型').AsString:=' 文件';
+        if Items[i].Size/(1024*10) < 1 then
+          ds1.FieldByName('大小').AsString:=IntToStr(Items[i].Size)+' B'
+        else if Items[i].Size/(1024*1024) < 1 then
+          ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024)])+' K'
         else
-          LS.Add(Format('%-22s%15s%-10s%s',[Utf8ToAnsi(Trim(Items[i].FileName)),IntToStr(Items[i].Size),'  文件',DateTimeToStr(Items[i].ModifiedDate)]));
+          ds1.FieldByName('大小').AsString:=Format('%.2f',[Items[i].Size/(1024*1024)])+' M';
       end;
     end;
-    lst_ServerList.Items.Clear;
-    lst_ServerList.Items.Assign(LS);
-  finally
-    LS.Free;
-  end;   
-end;
-{-------------------------------------------------------------------------------
- Description: 进入目录按钮
--------------------------------------------------------------------------------}
-procedure TForm1.btn_EnterDirectoryClick(Sender: TObject);
-begin
-  Self.ChageDir(edt_CurrentDirectory.Text);
-end;
-{-------------------------------------------------------------------------------
- Description: 后退按钮
--------------------------------------------------------------------------------}
-procedure TForm1.btn_BackClick(Sender: TObject);
-begin
-  Self.ChageDir('..');
-end;
-{-------------------------------------------------------------------------------
- Description: 双击文件夹名称，进入该目录
--------------------------------------------------------------------------------}
-procedure TForm1.lst_ServerListDblClick(Sender: TObject);
-begin
-  if not idftp_Client.Connected then
-    Exit;
-  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
-    Self.ChageDir(Utf8ToAnsi(idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName));
+  end;
+  ds2.DataSet:=ds1;
+  dbgrd1.DataSource:=ds2;
+
+  dbgrd1.Columns.Items[0].Width:=127;
+  dbgrd1.Columns.Items[1].Width:=60;
+  dbgrd1.Columns.Items[2].Width:=40;
+  dbgrd1.Columns.Items[3].Width:=120;
+  dbgrd1.Perform(WM_VSCROLL,SB_TOP,0);
 end;
 {-------------------------------------------------------------------------------
  Description: 下载按钮
@@ -274,7 +327,7 @@ procedure TForm1.btn_DownloadClick(Sender: TObject);
    DirCount := idFTP.DirectoryListing.Count;
    for i := 0 to DirCount - 1 do
    begin
-     strName := Utf8ToAnsi(idFTP.DirectoryListing.Items[i].FileName);
+     strName := Trim(Utf8ToAnsi(idFTP.DirectoryListing.Items[i].FileName));
      mmo_Log.Lines.Add('解析文件：' + strName);
      if idFTP.DirectoryListing.Items[i].ItemType = ditDirectory then
        if (strName = '.') or (strName = '..') then
@@ -301,12 +354,16 @@ procedure TForm1.btn_DownloadClick(Sender: TObject);
 var
   strName: string;
   strDirectory: string;
+  isDir:Boolean;
 begin
-  if not idftp_Client.Connected then
+  if not CheckState then
     Exit;
+
   btn_Download.Enabled := False;
-  strName := idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
-  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
+  strName := Trim(tv1.Selected.Text);
+
+  isDir:=isDirectory(idftp_Client,AnsiToUtf8(getNodePath(tv1.Selected.Parent)),strName);
+  if isDir then
   begin
     if SelectDirectory('选择目录保存路径','',strDirectory) then
     begin
@@ -318,11 +375,12 @@ begin
   else
   begin
     //下载单个文件
-    dlgSave_File.FileName := Utf8ToAnsi(strName);
+    dlgSave_File.FileName := strName;
     if dlgSave_File.Execute then
     begin
       idftp_Client.TransferType := ftBinary;
-      FBytesToTransfer := idftp_Client.Size(strName);
+      //idftp_Client.TransferType := ftASCII;
+      FBytesToTransfer := idftp_Client.Size(AnsiToUtf8(strName));
       if FileExists(dlgSave_File.FileName) then
       begin
         case MessageDlg('文件已经存在，是否要继续下载？',  mtConfirmation, mbYesNoCancel, 0) of
@@ -333,11 +391,11 @@ begin
           mrYes:    //断点继续下载文件
             begin
               FBytesToTransfer := FBytesToTransfer - FileSizeByName(strName);
-              idftp_Client.Get(strName,dlgSave_File.FileName,False,True);
+              idftp_Client.Get(AnsiToUtf8(strName),dlgSave_File.FileName,False,True);
             end;
           mrNo:     //从头开始下载文件
             begin
-              idftp_Client.Get(strName,dlgSave_File.FileName,True);
+              idftp_Client.Get(AnsiToUtf8(strName),dlgSave_File.FileName,True);
             end;
         end;
       end
@@ -373,9 +431,11 @@ begin
   else
     S := '';
   S := FormatFloat('0.00 KB/s', FAverageSpeed) + '; ' + S;
+
+  //Sleep(1000);
   case AWorkMode of
-    wmRead: lbl_ShowWorking.Caption := '下载速度 ' + S;
-    wmWrite: lbl_ShowWorking.Caption := '上传速度 ' + S;
+    wmRead: stat1.Panels[0].Text := '下载速度 ' + S;
+    wmWrite: stat1.Panels[0].Text := '上传速度 ' + S;
   end;
   if FAbortTransfer then   //取消数据传输
     idftp_Client.Abort;
@@ -409,7 +469,7 @@ begin
   FBytesToTransfer := 0;
   pb_ShowWorking.Position := 0;
   FAverageSpeed := 0;
-  lbl_ShowWorking.Caption := '传输完成';
+  stat1.Panels[0].Text:= '传输完成';
 end;
 {-------------------------------------------------------------------------------
  Description: 取消按钮
@@ -423,15 +483,16 @@ end;
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_UploadClick(Sender: TObject);
 begin
-  if idftp_Client.Connected then
+  if not CheckState then
+    Exit;
+
+  if dlgOpen_File.Execute then
   begin
-    if dlgOpen_File.Execute then
-    begin
-      idftp_Client.TransferType := ftBinary;
-      idftp_Client.Put(dlgOpen_File.FileName, AnsiToUtf8(ExtractFileName(dlgOpen_File.FileName)));
-      ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
-    end;
-  end;  
+    idftp_Client.TransferType := ftBinary;
+    idftp_Client.Put(dlgOpen_File.FileName, Trim(AnsiToUtf8(ExtractFileName(dlgOpen_File.FileName))));
+    ChageDir(Trim(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir)));
+  end;
+  Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
  Description: 删除按钮
@@ -475,11 +536,14 @@ procedure TForm1.btn_DeleteClick(Sender: TObject);
   end;
 Var
   strName: String;
+  isDir:Boolean;
 begin
-  if not idftp_Client.Connected then
-    exit;
-  strName := idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
-  if idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].ItemType = ditDirectory then
+  if not CheckState then
+    Exit;
+
+  strName := Trim(tv1.Selected.Text);
+  isDir:=isDirectory(idftp_Client,getNodePath(tv1.Selected.Parent),strName);
+  if isDir then
     try
       idftp_Client.ChangeDir(strName);
       DeleteDirectory(idftp_Client,strName);
@@ -492,19 +556,32 @@ begin
       ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
     finally
     end;
+  Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
  Description: 新建目录按钮
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_MKDirectoryClick(Sender: TObject);
 var
-  S: string;
+  S,strName: string;
+  isDir:Boolean;
 begin
+  if not CheckState then
+    Exit;
+  strName := Trim(tv1.Selected.Text);
+  //idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
+
+  //判断选择的是目录还是文件，目录：置为下级，文件：置为同级；
+  isDir:=isDirectory(idftp_Client,AnsiToUtf8(getNodePath(tv1.Selected.Parent)),strName);
+  if isDir then
+    idftp_Client.ChangeDir(AnsiToUtf8(getNodePath(tv1.Selected)));
+
   if InputQuery('新建目录','文件夹名称',S) and (Trim(S) <> '') then
   begin
     idftp_Client.MakeDir(AnsiToUtf8(S));
     Self.ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
   end;
+  Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
  Description: 上传目录按钮
@@ -561,24 +638,24 @@ procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
 var
   strPath,strToPath,temp: string;
 begin
-  if idftp_Client.Connected then
+  if not CheckState then
+    Exit;
+  if SelectDirectory('选择上传目录','',strPath) then
   begin
-    if SelectDirectory('选择上传目录','',strPath) then
-    begin
-      temp := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
-      strToPath := temp;
-      if Length(strToPath) = 1 then
-        strToPath := strToPath +  ExtractFileName(strPath)
-      else
-        strToPath := strToPath + '/' +  ExtractFileName(strPath);
-      try
-        idftp_Client.MakeDir(AnsiToUtf8(ExtractFileName(strPath)));
-      except
-      end;
-      DoUploadDir(idftp_Client,strPath,strToPath);
-      Self.ChageDir(temp);
+    temp := Trim(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
+    strToPath := temp;
+    if Length(strToPath) = 1 then
+      strToPath := strToPath +  ExtractFileName(strPath)
+    else
+      strToPath := strToPath + '/' +  ExtractFileName(strPath);
+    try
+      idftp_Client.MakeDir(AnsiToUtf8(ExtractFileName(strPath)));
+    except
     end;
-  end;  
+    DoUploadDir(idftp_Client,strPath,strToPath);
+    Self.ChageDir(temp);
+  end;
+  Self.FreshTree(orginDir);
 end;
 
 
@@ -601,7 +678,7 @@ begin
      try
       idftp_Client.ChangeDir(AnsiToUtf8(strPath));
       idftp_Client.TransferType := ftASCII;
-      edt_CurrentDirectory.Text := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
+      nodePath := Utf8ToAnsi(idftp_Client.RetrieveCurrentDir);
       idftp_Client.List(LS);
       LS.Clear;
       with idftp_Client.DirectoryListing do
@@ -628,19 +705,19 @@ end;
 
 procedure TForm1.btn_FreshClick(Sender: TObject);
 begin
-  tv1.Items.Clear;
   Self.FreshTree(orginDir);
 end;
-
 
 procedure TForm1.tv1Change(Sender: TObject; Node: TTreeNode);
 var
   strPath:string;
 begin
   strPath:=getNodePath(Node);
-  edt_CurrentDirectory.Text:=strPath;
+  nodePath:=strPath;
   Self.ChageDir(strPath);
-  Self.Caption:='当前目录:['+strPath+']';
+  Self.Caption:=formName + '当前目录:['+nodePath+']';
+  
+  btn_Download.Enabled:=True;
 end;
 
 end.
