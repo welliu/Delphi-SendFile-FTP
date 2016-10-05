@@ -1,11 +1,3 @@
-{*******************************************************}
-{                                                       }
-{       ÏµÍ³Ãû³Æ FTP·şÎñÆ÷Àà                            }
-{       °æÈ¨ËùÓĞ (C) http://blog.csdn.net/akof1314      }
-{       µ¥ÔªÃû³Æ FTPServer.pas                          }
-{       µ¥Ôª¹¦ÄÜ ÔÚDelphi 7ÏÂTIdFTPServerÊµÏÖFTP·şÎñÆ÷  }
-{                                                       }
-{*******************************************************}
 unit FTPServer;
 
 interface
@@ -13,12 +5,12 @@ interface
 uses
   Classes,  Windows,  Sysutils,  IdFTPList,  IdFTPServer,  Idtcpserver,  IdSocketHandle,  Idglobal,  IdHashCRC, IdStack;
 {-------------------------------------------------------------------------------
-  ¹¦ÄÜ:  ×Ô¶¨ÒåÏûÏ¢£¬·½±ãÓë´°Ìå½øĞĞÏûÏ¢´«µİ
+  åŠŸèƒ½:  è‡ªå®šä¹‰æ¶ˆæ¯ï¼Œæ–¹ä¾¿ä¸çª—ä½“è¿›è¡Œæ¶ˆæ¯ä¼ é€’
 -------------------------------------------------------------------------------}
   type
     TFtpNotifyEvent = procedure (ADatetime: TDateTime;AUserIP, AEventMessage: string) of object;
 {-------------------------------------------------------------------------------
-  ¹¦ÄÜ:  FTP·şÎñÆ÷Àà
+  åŠŸèƒ½:  FTPæœåŠ¡å™¨ç±»
 -------------------------------------------------------------------------------}
   type
   TFTPServer = class
@@ -57,18 +49,18 @@ uses
 implementation
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.Create
-  ¹¦ÄÜ:      ´´½¨º¯Êı
-  ²ÎÊı:      ÎŞ
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.Create
+  åŠŸèƒ½:      åˆ›å»ºå‡½æ•°
+  å‚æ•°:      æ— 
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 constructor TFTPServer.Create;
 begin
   IdFTPServer := tIdFTPServer.create( nil ) ;
-  IdFTPServer.DefaultPort := 21;               //Ä¬ÈÏ¶Ë¿ÚºÅ
-  IdFTPServer.AllowAnonymousLogin := False;   //ÊÇ·ñÔÊĞíÄäÃûµÇÂ¼
+  IdFTPServer.DefaultPort := 21;               //é»˜è®¤ç«¯å£å·
+  IdFTPServer.AllowAnonymousLogin := False;   //æ˜¯å¦å…è®¸åŒ¿åç™»å½•
   IdFTPServer.EmulateSystem := ftpsUNIX;
-  IdFTPServer.HelpReply.text := '°ïÖú»¹Î´ÊµÏÖ£¡';
+  IdFTPServer.HelpReply.text := 'å¸®åŠ©è¿˜æœªå®ç°ï¼';
   IdFTPServer.OnChangeDirectory := IdFTPServer1ChangeDirectory;
   IdFTPServer.OnGetFileSize := IdFTPServer1GetFileSize;
   IdFTPServer.OnListDirectory := IdFTPServer1ListDirectory;
@@ -79,20 +71,20 @@ begin
   IdFTPServer.OnStoreFile := IdFTPServer1StoreFile;
   IdFTPServer.OnMakeDirectory := IdFTPServer1MakeDirectory;
   IdFTPServer.OnRemoveDirectory := IdFTPServer1RemoveDirectory;
-  IdFTPServer.Greeting.Text.Text := '»¶Ó­½øÈëFTP·şÎñÆ÷';
+  IdFTPServer.Greeting.Text.Text := 'æ¬¢è¿è¿›å…¥FTPæœåŠ¡å™¨';
   IdFTPServer.Greeting.NumericCode := 220;
   IdFTPServer.OnDisconnect := IdFTPServer1DisConnect;
   with IdFTPServer.CommandHandlers.add do
   begin
-    Command := 'XCRC';   //¿ÉÒÔÑ¸ËÙÑéÖ¤ËùÏÂÔØµÄÎÄµµÊÇ·ñºÍÔ´ÎÄµµÒ»Ñù
+    Command := 'XCRC';   //å¯ä»¥è¿…é€ŸéªŒè¯æ‰€ä¸‹è½½çš„æ–‡æ¡£æ˜¯å¦å’Œæºæ–‡æ¡£ä¸€æ ·
     OnCommand := IdFTPServer1CommandXCRC;
   end;
 end;
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    CalculateCRC
-  ¹¦ÄÜ:      ¼ÆËãCRC        
-  ²ÎÊı:      const path: string
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    CalculateCRC
+  åŠŸèƒ½:      è®¡ç®—CRC        
+  å‚æ•°:      const path: string
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function CalculateCRC( const path: string ) : string;
 var
@@ -114,10 +106,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1CommandXCRC
-  ¹¦ÄÜ:      XCRCÃüÁî        
-  ²ÎÊı:      ASender: TIdCommand
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1CommandXCRC
+  åŠŸèƒ½:      XCRCå‘½ä»¤        
+  å‚æ•°:      ASender: TIdCommand
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1CommandXCRC( ASender: TIdCommand ) ;
 // note, this is made up, and not defined in any rfc.
@@ -140,10 +132,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.Destroy
-  ¹¦ÄÜ:      Îö¹¹º¯Êı        
-  ²ÎÊı:      ÎŞ
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.Destroy
+  åŠŸèƒ½:      ææ„å‡½æ•°        
+  å‚æ•°:      æ— 
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 destructor TFTPServer.Destroy;
 begin
@@ -157,10 +149,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.Run
-  ¹¦ÄÜ:      ¿ªÆô·şÎñ        
-  ²ÎÊı:      ÎŞ
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.Run
+  åŠŸèƒ½:      å¼€å¯æœåŠ¡        
+  å‚æ•°:      æ— 
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.Run;
 begin
@@ -169,10 +161,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.Stop
-  ¹¦ÄÜ:      ¹Ø±Õ·şÎñ        
-  ²ÎÊı:      ÎŞ
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.Stop
+  åŠŸèƒ½:      å…³é—­æœåŠ¡        
+  å‚æ•°:      æ— 
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.Stop;
 begin 
@@ -180,20 +172,20 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.GetBindingIP
-  ¹¦ÄÜ:      »ñÈ¡°ó¶¨µÄIPµØÖ·        
-  ²ÎÊı:      
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    TFTPServer.GetBindingIP
+  åŠŸèƒ½:      è·å–ç»‘å®šçš„IPåœ°å€        
+  å‚æ•°:      
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function TFTPServer.GetBindingIP():string ;
 begin
   Result := GStack.LocalAddress;  
 end;
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    BackSlashToSlash
-  ¹¦ÄÜ:      ·´Ğ±¸Üµ½Ğ±¸Ü
-  ²ÎÊı:      const str: string
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    BackSlashToSlash
+  åŠŸèƒ½:      åæ–œæ åˆ°æ–œæ 
+  å‚æ•°:      const str: string
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function BackSlashToSlash( const str: string ) : string;
 var
@@ -206,10 +198,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    SlashToBackSlash
-  ¹¦ÄÜ:      Ğ±¸Üµ½·´Ğ±¸Ü        
-  ²ÎÊı:      const str: string
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    SlashToBackSlash
+  åŠŸèƒ½:      æ–œæ åˆ°åæ–œæ         
+  å‚æ•°:      const str: string
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function SlashToBackSlash( const str: string ) : string;
 var
@@ -222,10 +214,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.TransLatePath
-  ¹¦ÄÜ:      Â·¾¶Ãû³Æ·­Òë        
-  ²ÎÊı:      const APathname, homeDir: string
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    TFTPServer.TransLatePath
+  åŠŸèƒ½:      è·¯å¾„åç§°ç¿»è¯‘        
+  å‚æ•°:      const APathname, homeDir: string
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function TFTPServer.TransLatePath( const APathname, homeDir: string ) : string;
 var
@@ -249,10 +241,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    GetNewDirectory
-  ¹¦ÄÜ:      µÃµ½ĞÂÄ¿Â¼        
-  ²ÎÊı:      old, action: string
-  ·µ»ØÖµ:    string
+  è¿‡ç¨‹å:    GetNewDirectory
+  åŠŸèƒ½:      å¾—åˆ°æ–°ç›®å½•        
+  å‚æ•°:      old, action: string
+  è¿”å›å€¼:    string
 -------------------------------------------------------------------------------}
 function GetNewDirectory( old, action: string ) : string;
 var
@@ -278,10 +270,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1UserLogin
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷Ö´ĞĞÒ»¸ö¿Í»§¶ËÁ¬½ÓµÄÓÃ»§ÕÊ»§Éí·İÑéÖ¤        
-  ²ÎÊı:      ASender: TIdFTPServerThread; const AUsername, APassword: string; var AAuthenticated: Boolean
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1UserLogin
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨æ‰§è¡Œä¸€ä¸ªå®¢æˆ·ç«¯è¿æ¥çš„ç”¨æˆ·å¸æˆ·èº«ä»½éªŒè¯        
+  å‚æ•°:      ASender: TIdFTPServerThread; const AUsername, APassword: string; var AAuthenticated: Boolean
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1UserLogin( ASender: TIdFTPServerThread;
   const AUsername, APassword: string; var AAuthenticated: Boolean ) ;
@@ -292,14 +284,14 @@ begin
   ASender.HomeDir := AnsiToUtf8(BorrowDirectory);
   asender.currentdir := '/';
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ÓÃ»§µÇÂ¼·şÎñÆ÷');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ç”¨æˆ·ç™»å½•æœåŠ¡å™¨');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1ListDirectory
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷Éú³É¸ñÊ½»¯µÄÄ¿Â¼ÁĞ±í        
-  ²ÎÊı:      ASender: TIdFTPServerThread; const APath: string; ADirectoryListing: TIdFTPListItems
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1ListDirectory
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨ç”Ÿæˆæ ¼å¼åŒ–çš„ç›®å½•åˆ—è¡¨        
+  å‚æ•°:      ASender: TIdFTPServerThread; const APath: string; ADirectoryListing: TIdFTPListItems
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1ListDirectory( ASender: TIdFTPServerThread; const APath: string; ADirectoryListing: TIdFTPListItems ) ;
 
@@ -308,13 +300,13 @@ procedure TFTPServer.IdFTPServer1ListDirectory( ASender: TIdFTPServerThread; con
     listitem: TIdFTPListItem;
   begin
     listitem := aDirectoryListing.Add;
-    listitem.ItemType := ItemType; //±íÊ¾Ò»¸öÎÄ¼şÏµÍ³µÄÊôĞÔ¼¯
-    listitem.FileName := AnsiToUtf8(Filename);  //Ãû³Æ·ÖÅä¸øÄ¿Â¼ÖĞµÄÁĞ±íÏî,ÕâÀï·ÀÖ¹ÁËÖĞÎÄÂÒÂë
-    listitem.OwnerName := 'anonymous';//´ú±íÁËÓÃ»§ÓµÓĞµÄÎÄ¼ş»òÄ¿Â¼ÏîµÄÃû³Æ
-    listitem.GroupName := 'all';    //Ö¸¶¨×éÃûÓµÓĞµÄÎÄ¼şÃû³Æ»òÄ¿Â¼ÌõÄ¿
-    listitem.OwnerPermissions := 'rwx'; //ÓµÓĞÕßÈ¨ÏŞ£¬R¶ÁWĞ´XÖ´ĞĞ
-    listitem.GroupPermissions := 'rwx'; //×éÓµÓĞÕßÈ¨ÏŞ
-    listitem.UserPermissions := 'rwx';  //ÓÃ»§È¨ÏŞ£¬»ùÓÚÓÃ»§ºÍ×éÈ¨ÏŞ
+    listitem.ItemType := ItemType; //è¡¨ç¤ºä¸€ä¸ªæ–‡ä»¶ç³»ç»Ÿçš„å±æ€§é›†
+    listitem.FileName := AnsiToUtf8(Filename);  //åç§°åˆ†é…ç»™ç›®å½•ä¸­çš„åˆ—è¡¨é¡¹,è¿™é‡Œé˜²æ­¢äº†ä¸­æ–‡ä¹±ç 
+    listitem.OwnerName := 'anonymous';//ä»£è¡¨äº†ç”¨æˆ·æ‹¥æœ‰çš„æ–‡ä»¶æˆ–ç›®å½•é¡¹çš„åç§°
+    listitem.GroupName := 'all';    //æŒ‡å®šç»„åæ‹¥æœ‰çš„æ–‡ä»¶åç§°æˆ–ç›®å½•æ¡ç›®
+    listitem.OwnerPermissions := 'rwx'; //æ‹¥æœ‰è€…æƒé™ï¼ŒRè¯»Wå†™Xæ‰§è¡Œ
+    listitem.GroupPermissions := 'rwx'; //ç»„æ‹¥æœ‰è€…æƒé™
+    listitem.UserPermissions := 'rwx';  //ç”¨æˆ·æƒé™ï¼ŒåŸºäºç”¨æˆ·å’Œç»„æƒé™
     listitem.Size := size;
     listitem.ModifiedDate := date;
   end;
@@ -338,10 +330,10 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1RenameFile
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷ÖØÃüÃû·şÎñÆ÷ÎÄ¼şÏµÍ³ÖĞµÄÎÄ¼ş        
-  ²ÎÊı:      ASender: TIdFTPServerThread; const ARenameFromFile, ARenameToFile: string
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1RenameFile
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨é‡å‘½åæœåŠ¡å™¨æ–‡ä»¶ç³»ç»Ÿä¸­çš„æ–‡ä»¶        
+  å‚æ•°:      ASender: TIdFTPServerThread; const ARenameFromFile, ARenameToFile: string
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1RenameFile( ASender: TIdFTPServerThread;
   const ARenameFromFile, ARenameToFile: string ) ;
@@ -353,33 +345,33 @@ begin
     on e:Exception do
     begin
       if Assigned(FOnFtpNotifyEvent) then
-        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ÖØÃüÃûÎÄ¼ş[' + Utf8ToAnsi(ARenameFromFile) + ']Ê§°Ü£¬Ô­ÒòÊÇ' + e.Message);
+        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'é‡å‘½åæ–‡ä»¶[' + Utf8ToAnsi(ARenameFromFile) + ']å¤±è´¥ï¼ŒåŸå› æ˜¯' + e.Message);
       Exit;
     end;
   end;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ÖØÃüÃûÎÄ¼ş[' + Utf8ToAnsi(ARenameFromFile) + ']Îª[' + Utf8ToAnsi(ARenameToFile) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'é‡å‘½åæ–‡ä»¶[' + Utf8ToAnsi(ARenameFromFile) + ']ä¸º[' + Utf8ToAnsi(ARenameToFile) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1RetrieveFile
-  ¹¦ÄÜ:      ÔÊĞí´Ó·şÎñÆ÷ÏÂÔØÎÄ¼şÏµÍ³ÖĞµÄÎÄ¼ş
-  ²ÎÊı:      ASender: TIdFTPServerThread; const AFilename: string; var VStream: TStream
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1RetrieveFile
+  åŠŸèƒ½:      å…è®¸ä»æœåŠ¡å™¨ä¸‹è½½æ–‡ä»¶ç³»ç»Ÿä¸­çš„æ–‡ä»¶
+  å‚æ•°:      ASender: TIdFTPServerThread; const AFilename: string; var VStream: TStream
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1RetrieveFile( ASender: TIdFTPServerThread;
   const AFilename: string; var VStream: TStream ) ;
 begin
   VStream := TFileStream.Create( translatepath( AFilename, ASender.HomeDir ) , fmopenread or fmShareDenyWrite ) ;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ÏÂÔØÎÄ¼ş[' + Utf8ToAnsi(AFilename) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ä¸‹è½½æ–‡ä»¶[' + Utf8ToAnsi(AFilename) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1StoreFile
-  ¹¦ÄÜ:      ÔÊĞíÔÚ·şÎñÆ÷ÉÏ´«ÎÄ¼şÏµÍ³ÖĞµÄÎÄ¼ş
-  ²ÎÊı:      ASender: TIdFTPServerThread; const AFilename: string; AAppend: Boolean; var VStream: TStream
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1StoreFile
+  åŠŸèƒ½:      å…è®¸åœ¨æœåŠ¡å™¨ä¸Šä¼ æ–‡ä»¶ç³»ç»Ÿä¸­çš„æ–‡ä»¶
+  å‚æ•°:      ASender: TIdFTPServerThread; const AFilename: string; AAppend: Boolean; var VStream: TStream
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1StoreFile( ASender: TIdFTPServerThread;
   const AFilename: string; AAppend: Boolean; var VStream: TStream ) ;
@@ -392,14 +384,14 @@ begin
   else
     VStream := TFileStream.create( translatepath( AFilename, ASender.HomeDir ) , fmCreate or fmShareExclusive ) ;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ÉÏ´«ÎÄ¼ş[' + Utf8ToAnsi(AFilename) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'ä¸Šä¼ æ–‡ä»¶[' + Utf8ToAnsi(AFilename) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1RemoveDirectory
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷ÔÚ·şÎñÆ÷É¾³ıÎÄ¼şÏµÍ³µÄÄ¿Â¼        
-  ²ÎÊı:      ASender: TIdFTPServerThread; var VDirectory: string
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1RemoveDirectory
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨åœ¨æœåŠ¡å™¨åˆ é™¤æ–‡ä»¶ç³»ç»Ÿçš„ç›®å½•        
+  å‚æ•°:      ASender: TIdFTPServerThread; var VDirectory: string
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1RemoveDirectory( ASender: TIdFTPServerThread;
   var VDirectory: string ) ;
@@ -410,19 +402,19 @@ begin
     on e:Exception do
     begin
       if Assigned(FOnFtpNotifyEvent) then
-        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'É¾³ıÄ¿Â¼[' + Utf8ToAnsi(VDirectory) + ']Ê§°Ü£¬Ô­ÒòÊÇ' + e.Message);
+        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ é™¤ç›®å½•[' + Utf8ToAnsi(VDirectory) + ']å¤±è´¥ï¼ŒåŸå› æ˜¯' + e.Message);
       Exit;
     end;
   end;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'É¾³ıÄ¿Â¼[' + Utf8ToAnsi(VDirectory) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ é™¤ç›®å½•[' + Utf8ToAnsi(VDirectory) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1MakeDirectory
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷´Ó·şÎñÆ÷ÖĞ´´½¨Ò»¸öĞÂµÄ×ÓÄ¿Â¼
-  ²ÎÊı:      ASender: TIdFTPServerThread; var VDirectory: string
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1MakeDirectory
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨ä»æœåŠ¡å™¨ä¸­åˆ›å»ºä¸€ä¸ªæ–°çš„å­ç›®å½•
+  å‚æ•°:      ASender: TIdFTPServerThread; var VDirectory: string
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1MakeDirectory( ASender: TIdFTPServerThread;
   var VDirectory: string ) ;
@@ -433,33 +425,33 @@ begin
     on e:Exception do
     begin
       if Assigned(FOnFtpNotifyEvent) then
-        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'´´½¨Ä¿Â¼[' + Utf8ToAnsi(VDirectory) + ']Ê§°Ü£¬Ô­ÒòÊÇ' + e.Message);
+        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ›å»ºç›®å½•[' + Utf8ToAnsi(VDirectory) + ']å¤±è´¥ï¼ŒåŸå› æ˜¯' + e.Message);
       Exit;
     end;
   end;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'´´½¨Ä¿Â¼[' + Utf8ToAnsi(VDirectory) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ›å»ºç›®å½•[' + Utf8ToAnsi(VDirectory) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1GetFileSize
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷¼ìË÷ÔÚ·şÎñÆ÷ÎÄ¼şÏµÍ³µÄÎÄ¼şµÄ´óĞ¡        
-  ²ÎÊı:      ASender: TIdFTPServerThread; const AFilename: string; var VFileSize: Int64
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1GetFileSize
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨æ£€ç´¢åœ¨æœåŠ¡å™¨æ–‡ä»¶ç³»ç»Ÿçš„æ–‡ä»¶çš„å¤§å°        
+  å‚æ•°:      ASender: TIdFTPServerThread; const AFilename: string; var VFileSize: Int64
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1GetFileSize( ASender: TIdFTPServerThread;
   const AFilename: string; var VFileSize: Int64 ) ;
 begin
   VFileSize := FileSizeByName( TransLatePath( AFilename, ASender.HomeDir ) ) ;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'»ñÈ¡ÎÄ¼ş´óĞ¡');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'è·å–æ–‡ä»¶å¤§å°');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1DeleteFile
-  ¹¦ÄÜ:      ÔÊĞí´Ó·şÎñÆ÷ÖĞÉ¾³ıµÄÎÄ¼şÏµÍ³ÖĞµÄÎÄ¼ş
-  ²ÎÊı:      ASender: TIdFTPServerThread; const APathname: string
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1DeleteFile
+  åŠŸèƒ½:      å…è®¸ä»æœåŠ¡å™¨ä¸­åˆ é™¤çš„æ–‡ä»¶ç³»ç»Ÿä¸­çš„æ–‡ä»¶
+  å‚æ•°:      ASender: TIdFTPServerThread; const APathname: string
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1DeleteFile( ASender: TIdFTPServerThread;
   const APathname: string ) ;
@@ -470,33 +462,33 @@ begin
     on e:Exception do
     begin
       if Assigned(FOnFtpNotifyEvent) then
-        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'É¾³ıÎÄ¼ş[' + Utf8ToAnsi(APathname) + ']Ê§°Ü£¬Ô­ÒòÊÇ' + e.Message);
+        OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ é™¤æ–‡ä»¶[' + Utf8ToAnsi(APathname) + ']å¤±è´¥ï¼ŒåŸå› æ˜¯' + e.Message);
       Exit;
     end;
   end;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'É¾³ıÎÄ¼ş[' + Utf8ToAnsi(APathname) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'åˆ é™¤æ–‡ä»¶[' + Utf8ToAnsi(APathname) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1ChangeDirectory
-  ¹¦ÄÜ:      ÔÊĞí·şÎñÆ÷Ñ¡ÔñÒ»¸öÎÄ¼şÏµÍ³Â·¾¶        
-  ²ÎÊı:      ASender: TIdFTPServerThread; var VDirectory: string
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1ChangeDirectory
+  åŠŸèƒ½:      å…è®¸æœåŠ¡å™¨é€‰æ‹©ä¸€ä¸ªæ–‡ä»¶ç³»ç»Ÿè·¯å¾„        
+  å‚æ•°:      ASender: TIdFTPServerThread; var VDirectory: string
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1ChangeDirectory( ASender: TIdFTPServerThread;
   var VDirectory: string ) ;
 begin
   VDirectory := GetNewDirectory( ASender.CurrentDir, VDirectory ) ;
   if Assigned(FOnFtpNotifyEvent) then
-    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'½øÈëÄ¿Â¼[' + Utf8ToAnsi(VDirectory) + ']');
+    OnFtpNotifyEvent(Now, ASender.Connection.Socket.Binding.PeerIP,'è¿›å…¥ç›®å½•[' + Utf8ToAnsi(VDirectory) + ']');
 end;
 
 {-------------------------------------------------------------------------------
-  ¹ı³ÌÃû:    TFTPServer.IdFTPServer1DisConnect
-  ¹¦ÄÜ:      Ê§È¥ÍøÂçÁ¬½Ó        
-  ²ÎÊı:      AThread: TIdPeerThread
-  ·µ»ØÖµ:    ÎŞ
+  è¿‡ç¨‹å:    TFTPServer.IdFTPServer1DisConnect
+  åŠŸèƒ½:      å¤±å»ç½‘ç»œè¿æ¥        
+  å‚æ•°:      AThread: TIdPeerThread
+  è¿”å›å€¼:    æ— 
 -------------------------------------------------------------------------------}
 procedure TFTPServer.IdFTPServer1DisConnect( AThread: TIdPeerThread ) ;
 begin

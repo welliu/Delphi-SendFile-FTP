@@ -48,7 +48,7 @@ begin
     FFtpServer.BorrowPort := StrToInt(Trim(edt_BorrowPort.Text));
     FFtpServer.OnFtpNotifyEvent := TFTPServer1FtpNotifyEvent;
     FFtpServer.Run;
-    mmo1.Lines.Add(DateTimeToStr(Now) + #32 +'FTP·şÎñÆ÷ÒÑ¿ªÆô£¬±¾»úIPµØÖ·£º' + FFtpServer.GetBindingIP);
+    mmo1.Lines.Add(DateTimeToStr(Now) + #32 +'FTPæœåŠ¡å™¨å·²å¼€å¯ï¼Œæœ¬æœºIPåœ°å€ï¼š' + FFtpServer.GetBindingIP);
   end;
 end;
 
@@ -58,7 +58,7 @@ begin
   begin
     FFtpServer.Stop;
     FreeAndNil(FFtpServer);
-    mmo1.Lines.Add(DateTimeToStr(Now) + #32 +'FTP·şÎñÆ÷ÒÑ¹Ø±Õ');
+    mmo1.Lines.Add(DateTimeToStr(Now) + #32 +'FTPæœåŠ¡å™¨å·²å…³é—­');
   end;
 end;
 
