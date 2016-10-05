@@ -1,11 +1,3 @@
-{*******************************************************}
-{                                                       }
-{       ÏµÍ³Ãû³Æ IdFTPÍêÈ«Ê¹ÓÃ                          }
-{       °æÈ¨ËùÓĞ (C) http://blog.csdn.net/akof1314      }
-{       µ¥ÔªÃû³Æ Unit1.pas                              }
-{       µ¥Ôª¹¦ÄÜ ÔÚDelphi 7ÏÂÊµÏÖFTP¿Í»§¶Ë              }
-{                                                       }
-{*******************************************************}
 unit Unit1;
 
 interface
@@ -61,11 +53,11 @@ type
     procedure btn_FreshClick(Sender: TObject);
     procedure tv1Change(Sender: TObject; Node: TTreeNode);
   private
-    FTransferrignData: Boolean;    //ÊÇ·ñÔÚ´«ÊäÊı¾İ
-    FBytesToTransfer: LongWord;    //´«ÊäµÄ×Ö½Ú´óĞ¡
-    FAbortTransfer: Boolean;       //È¡ÏûÊı¾İ´«Êä
-    STime : TDateTime;             //Ê±¼ä
-    FAverageSpeed : Double;        //Æ½¾ùËÙ¶È
+    FTransferrignData: Boolean;    //æ˜¯å¦åœ¨ä¼ è¾“æ•°æ®
+    FBytesToTransfer: LongWord;    //ä¼ è¾“çš„å­—èŠ‚å¤§å°
+    FAbortTransfer: Boolean;       //å–æ¶ˆæ•°æ®ä¼ è¾“
+    STime : TDateTime;             //æ—¶é—´
+    FAverageSpeed : Double;        //å¹³å‡é€Ÿåº¦
     procedure ChageDir(DirName: String);
     procedure FreshTree(DirName: String);
     function CheckState:Boolean;
@@ -79,7 +71,7 @@ var
   Form1: TForm1;
 const
   orginDir = '/';
-  formName = '¿Í»§¶Ë ';
+  formName = 'å®¢æˆ·ç«¯ ';
   
 function getNodePath(Node:TTreeNode):string;
 function isDirectory(var idftp_Client:TIdFTP;parentPath,fileName:String):Boolean;
@@ -130,41 +122,41 @@ begin
   result:=orginDir+strPath;
 end;
 {-------------------------------------------------------------------------------
- Description: ´°Ìå´´½¨º¯Êı
+ Description: çª—ä½“åˆ›å»ºå‡½æ•°
 -------------------------------------------------------------------------------}
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  Self.DoubleBuffered := True;     //¿ªÆôË«»º³å£¬Ê¹µÃlbl_ShowWorkingÃèÊö²»ÉÁË¸
+  Self.DoubleBuffered := True;     //å¼€å¯åŒç¼“å†²ï¼Œä½¿å¾—lbl_ShowWorkingæè¿°ä¸é—ªçƒ
   idntfrz1.IdleTimeOut := 50;
   idntfrz1.OnlyWhenIdle := False;
   Self.nodePath:=orginDir;
 end;
 {-------------------------------------------------------------------------------
- Description: Á¬½Ó¡¢¶Ï¿ªÁ¬½Ó
+ Description: è¿æ¥ã€æ–­å¼€è¿æ¥
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_ConnectClick(Sender: TObject);
 begin
   btn_Connect.Enabled := False;
   if idftp_Client.Connected then
   begin
-    //ÒÑÁ¬½Ó
+    //å·²è¿æ¥
     try
-      if FTransferrignData then      //ÊÇ·ñÊı¾İÔÚ´«Êä
+      if FTransferrignData then      //æ˜¯å¦æ•°æ®åœ¨ä¼ è¾“
         idftp_Client.Abort;
       idftp_Client.Quit;
     finally
-      btn_Connect.Caption := 'Á¬½Ó';
+      btn_Connect.Caption := 'è¿æ¥';
       nodePath := orginDir;
       btn_Connect.Enabled := True;
-      mmo_Log.Lines.Add(DateTimeToStr(Now) + '¶Ï¿ª·şÎñÆ÷');
+      mmo_Log.Lines.Add(DateTimeToStr(Now) + 'æ–­å¼€æœåŠ¡å™¨');
     end;
   end
   else
   begin
-    //Î´Á¬½Ó
+    //æœªè¿æ¥
     with idftp_Client do
     try
-      Passive := True; //±»¶¯Ä£Ê½
+      Passive := True; //è¢«åŠ¨æ¨¡å¼
       Username := Trim(edt_UserName.Text);
       Password := Trim(edt_UserPassword.Text);
       Host := Trim(edt_ServerAddress.Text);
@@ -176,32 +168,32 @@ begin
     finally
       btn_Connect.Enabled := True;
       if Connected then
-        btn_Connect.Caption := '¶Ï¿ªÁ¬½Ó';
-        mmo_Log.Lines.Add(DateTimeToStr(Now) + 'Á¬½Ó·şÎñÆ÷');
+        btn_Connect.Caption := 'æ–­å¼€è¿æ¥';
+        mmo_Log.Lines.Add(DateTimeToStr(Now) + 'è¿æ¥æœåŠ¡å™¨');
     end;
   end;
 end;
 {-------------------------------------------------------------------------------
- Description: ²é¿´×´Ì¬
+ Description: æŸ¥çœ‹çŠ¶æ€
 -------------------------------------------------------------------------------}
 function TForm1.CheckState:Boolean;
 begin
   if not idftp_Client.Connected then
   begin
-    ShowMessage('ÎŞ·¨Á¬½Ó·şÎñÆ÷£¡');
+    ShowMessage('æ— æ³•è¿æ¥æœåŠ¡å™¨ï¼');
     result:=false;
     Exit;
   end;
   if tv1.Selected=nil then
   begin
-    ShowMessage('ÇëÔÚÄ¿Â¼Ê÷ÖĞÑ¡ÔñÒª´«ÊäµÄÎÄ¼ş£¡');
+    ShowMessage('è¯·åœ¨ç›®å½•æ ‘ä¸­é€‰æ‹©è¦ä¼ è¾“çš„æ–‡ä»¶ï¼');
     result:=false;
     Exit;
   end;
   result:=True;
 end;
 {-------------------------------------------------------------------------------
- Description: Ë¢ĞÂÊ÷×´Ä¿Â¼
+ Description: åˆ·æ–°æ ‘çŠ¶ç›®å½•
 -------------------------------------------------------------------------------}
 procedure TForm1.FreshTree(DirName: String);
   procedure ShowTree;
@@ -253,7 +245,7 @@ begin
 end;
 
 {-------------------------------------------------------------------------------
- Description: ¸Ä±äÄ¿Â¼
+ Description: æ”¹å˜ç›®å½•
 -------------------------------------------------------------------------------}
 procedure TForm1.ChageDir(DirName: String);
 var
@@ -265,10 +257,10 @@ begin
   idftp_Client.List(nil);
 
   ds1:=TClientDataSet.Create(nil);
-  ds1.FieldDefs.Add('ÎÄ¼şÃû',ftString,100,true);
-  ds1.FieldDefs.Add('´óĞ¡',ftString,100,true);
-  ds1.FieldDefs.Add('ÀàĞÍ',ftString,10,true);
-  ds1.FieldDefs.Add('ĞŞ¸ÄÈÕÆÚ',ftString,100,true);
+  ds1.FieldDefs.Add('æ–‡ä»¶å',ftString,100,true);
+  ds1.FieldDefs.Add('å¤§å°',ftString,100,true);
+  ds1.FieldDefs.Add('ç±»å‹',ftString,10,true);
+  ds1.FieldDefs.Add('ä¿®æ”¹æ—¥æœŸ',ftString,100,true);
   ds1.CreateDataSet;
   ds1.Open;
 
@@ -279,22 +271,22 @@ begin
       if (Trim(Items[i].FileName) = '.')or(Trim(Items[i].FileName)='..')then
         Continue;
       ds1.Append;
-      ds1.FieldByName('ÎÄ¼şÃû').AsString:=Utf8ToAnsi(Trim(Items[i].FileName));
-      ds1.FieldByName('ĞŞ¸ÄÈÕÆÚ').AsString:=DateTimeToStr(Items[i].ModifiedDate);
+      ds1.FieldByName('æ–‡ä»¶å').AsString:=Utf8ToAnsi(Trim(Items[i].FileName));
+      ds1.FieldByName('ä¿®æ”¹æ—¥æœŸ').AsString:=DateTimeToStr(Items[i].ModifiedDate);
       if Items[i].ItemType = ditDirectory then
       begin
-        ds1.FieldByName('ÀàĞÍ').AsString:='ÎÄ¼ş¼Ğ';
-        ds1.FieldByName('´óĞ¡').AsString:='...';
+        ds1.FieldByName('ç±»å‹').AsString:='æ–‡ä»¶å¤¹';
+        ds1.FieldByName('å¤§å°').AsString:='...';
       end
       else
       begin
-        ds1.FieldByName('ÀàĞÍ').AsString:=' ÎÄ¼ş';
+        ds1.FieldByName('ç±»å‹').AsString:=' æ–‡ä»¶';
         if Items[i].Size/(1024*10) < 1 then
-          ds1.FieldByName('´óĞ¡').AsString:=IntToStr(Items[i].Size)+' B'
+          ds1.FieldByName('å¤§å°').AsString:=IntToStr(Items[i].Size)+' B'
         else if Items[i].Size/(1024*1024) < 1 then
-          ds1.FieldByName('´óĞ¡').AsString:=Format('%.2f',[Items[i].Size/(1024)])+' K'
+          ds1.FieldByName('å¤§å°').AsString:=Format('%.2f',[Items[i].Size/(1024)])+' K'
         else
-          ds1.FieldByName('´óĞ¡').AsString:=Format('%.2f',[Items[i].Size/(1024*1024)])+' M';
+          ds1.FieldByName('å¤§å°').AsString:=Format('%.2f',[Items[i].Size/(1024*1024)])+' M';
       end;
     end;
   end;
@@ -308,7 +300,7 @@ begin
   dbgrd1.Perform(WM_VSCROLL,SB_TOP,0);
 end;
 {-------------------------------------------------------------------------------
- Description: ÏÂÔØ°´Å¥
+ Description: ä¸‹è½½æŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_DownloadClick(Sender: TObject);
  procedure DownloadDirectory(var idFTP: TIdFtp;LocalDir, RemoteDir: string);
@@ -318,8 +310,8 @@ procedure TForm1.btn_DownloadClick(Sender: TObject);
  begin
    if not DirectoryExists(LocalDir + RemoteDir) then
    begin
-     ForceDirectories(LocalDir + RemoteDir);  //´´½¨Ò»¸öÈ«Â·¾¶µÄÎÄ¼ş¼Ğ
-     mmo_Log.Lines.Add('½¨Á¢Ä¿Â¼£º' + LocalDir + RemoteDir);
+     ForceDirectories(LocalDir + RemoteDir);  //åˆ›å»ºä¸€ä¸ªå…¨è·¯å¾„çš„æ–‡ä»¶å¤¹
+     mmo_Log.Lines.Add('å»ºç«‹ç›®å½•ï¼š' + LocalDir + RemoteDir);
    end;
    idFTP.ChangeDir(AnsiToUtf8(RemoteDir));
    idFTP.TransferType := ftASCII;
@@ -328,7 +320,7 @@ procedure TForm1.btn_DownloadClick(Sender: TObject);
    for i := 0 to DirCount - 1 do
    begin
      strName := Trim(Utf8ToAnsi(idFTP.DirectoryListing.Items[i].FileName));
-     mmo_Log.Lines.Add('½âÎöÎÄ¼ş£º' + strName);
+     mmo_Log.Lines.Add('è§£ææ–‡ä»¶ï¼š' + strName);
      if idFTP.DirectoryListing.Items[i].ItemType = ditDirectory then
        if (strName = '.') or (strName = '..') then
          Continue
@@ -341,12 +333,12 @@ procedure TForm1.btn_DownloadClick(Sender: TObject);
      else
      begin
        if (ExtractFileExt(strName) = '.txt') or (ExtractFileExt(strName) = '.html') or (ExtractFileExt(strName) = '.htm') then
-         idFTP.TransferType := ftASCII    //ÎÄ±¾Ä£Ê½
+         idFTP.TransferType := ftASCII    //æ–‡æœ¬æ¨¡å¼
        else
-         idFTP.TransferType := ftBinary;   //¶ş½øÖÆÄ£Ê½
+         idFTP.TransferType := ftBinary;   //äºŒè¿›åˆ¶æ¨¡å¼
        FBytesToTransfer := idFTP.Size(AnsiToUtf8(strName));        ;
        idFTP.Get(AnsiToUtf8(strName), LocalDir + RemoteDir + '\' + strName, True);
-       mmo_Log.Lines.Add('ÏÂÔØÎÄ¼ş£º' + strName);
+       mmo_Log.Lines.Add('ä¸‹è½½æ–‡ä»¶ï¼š' + strName);
      end;
      Application.ProcessMessages;
    end;
@@ -365,7 +357,7 @@ begin
   isDir:=isDirectory(idftp_Client,AnsiToUtf8(getNodePath(tv1.Selected.Parent)),strName);
   if isDir then
   begin
-    if SelectDirectory('Ñ¡ÔñÄ¿Â¼±£´æÂ·¾¶','',strDirectory) then
+    if SelectDirectory('é€‰æ‹©ç›®å½•ä¿å­˜è·¯å¾„','',strDirectory) then
     begin
       DownloadDirectory(idftp_Client,strDirectory + '\',Utf8ToAnsi(strName));
       idftp_Client.ChangeDir('..');
@@ -374,7 +366,7 @@ begin
   end
   else
   begin
-    //ÏÂÔØµ¥¸öÎÄ¼ş
+    //ä¸‹è½½å•ä¸ªæ–‡ä»¶
     dlgSave_File.FileName := strName;
     if dlgSave_File.Execute then
     begin
@@ -383,17 +375,17 @@ begin
       FBytesToTransfer := idftp_Client.Size(AnsiToUtf8(strName));
       if FileExists(dlgSave_File.FileName) then
       begin
-        case MessageDlg('ÎÄ¼şÒÑ¾­´æÔÚ£¬ÊÇ·ñÒª¼ÌĞøÏÂÔØ£¿',  mtConfirmation, mbYesNoCancel, 0) of
-          mrCancel:  //ÍË³ö²Ù×÷
+        case MessageDlg('æ–‡ä»¶å·²ç»å­˜åœ¨ï¼Œæ˜¯å¦è¦ç»§ç»­ä¸‹è½½ï¼Ÿ',  mtConfirmation, mbYesNoCancel, 0) of
+          mrCancel:  //é€€å‡ºæ“ä½œ
             begin
               Exit;
             end;
-          mrYes:    //¶Ïµã¼ÌĞøÏÂÔØÎÄ¼ş
+          mrYes:    //æ–­ç‚¹ç»§ç»­ä¸‹è½½æ–‡ä»¶
             begin
               FBytesToTransfer := FBytesToTransfer - FileSizeByName(strName);
               idftp_Client.Get(AnsiToUtf8(strName),dlgSave_File.FileName,False,True);
             end;
-          mrNo:     //´ÓÍ·¿ªÊ¼ÏÂÔØÎÄ¼ş
+          mrNo:     //ä»å¤´å¼€å§‹ä¸‹è½½æ–‡ä»¶
             begin
               idftp_Client.Get(AnsiToUtf8(strName),dlgSave_File.FileName,True);
             end;
@@ -406,7 +398,7 @@ begin
   btn_Download.Enabled := True;
 end;
 {-------------------------------------------------------------------------------
- Description: ¶ÁĞ´²Ù×÷µÄ¹¤×÷ÊÂ¼ş
+ Description: è¯»å†™æ“ä½œçš„å·¥ä½œäº‹ä»¶
 -------------------------------------------------------------------------------}
 procedure TForm1.idftp_ClientWork(Sender: TObject; AWorkMode: TWorkMode;
   const AWorkCount: Integer);
@@ -416,17 +408,17 @@ Var
   H, M, Sec, MS: Word;
   DLTime: Double;
 begin
-  TotalTime :=  Now - STime;      //ÒÑ»¨·ÑµÄÊ±¼ä
-  DecodeTime(TotalTime, H, M, Sec, MS);  //½âÂëÊ±¼ä
-  Sec := Sec + M * 60 + H * 3600;  //×ª»»³ÉÒÔÃë¼ÆËã
-  DLTime := Sec + MS / 1000;      //¾«È·µ½ºÁÃë
+  TotalTime :=  Now - STime;      //å·²èŠ±è´¹çš„æ—¶é—´
+  DecodeTime(TotalTime, H, M, Sec, MS);  //è§£ç æ—¶é—´
+  Sec := Sec + M * 60 + H * 3600;  //è½¬æ¢æˆä»¥ç§’è®¡ç®—
+  DLTime := Sec + MS / 1000;      //ç²¾ç¡®åˆ°æ¯«ç§’
   if DLTime > 0 then
-    FAverageSpeed := (AWorkCount / 1024) / DLTime;   //ÇóÆ½¾ùËÙ¶È
+    FAverageSpeed := (AWorkCount / 1024) / DLTime;   //æ±‚å¹³å‡é€Ÿåº¦
   if FAverageSpeed > 0 then
   begin
     Sec := Trunc(((pb_ShowWorking.Max - AWorkCount) / 1024) / FAverageSpeed);
     S := Format('%2d:%2d:%2d', [Sec div 3600, (Sec div 60) mod 60, Sec mod 60]);
-    S := 'Ê£ÓàÊ±¼ä ' + S;
+    S := 'å‰©ä½™æ—¶é—´ ' + S;
   end
   else
     S := '';
@@ -434,16 +426,16 @@ begin
 
   //Sleep(1000);
   case AWorkMode of
-    wmRead: stat1.Panels[0].Text := 'ÏÂÔØËÙ¶È ' + S;
-    wmWrite: stat1.Panels[0].Text := 'ÉÏ´«ËÙ¶È ' + S;
+    wmRead: stat1.Panels[0].Text := 'ä¸‹è½½é€Ÿåº¦ ' + S;
+    wmWrite: stat1.Panels[0].Text := 'ä¸Šä¼ é€Ÿåº¦ ' + S;
   end;
-  if FAbortTransfer then   //È¡ÏûÊı¾İ´«Êä
+  if FAbortTransfer then   //å–æ¶ˆæ•°æ®ä¼ è¾“
     idftp_Client.Abort;
   pb_ShowWorking.Position := AWorkCount;
   FAbortTransfer := false;
 end;
 {-------------------------------------------------------------------------------
- Description: ¿ªÊ¼¶ÁĞ´²Ù×÷µÄÊÂ¼ş
+ Description: å¼€å§‹è¯»å†™æ“ä½œçš„äº‹ä»¶
 -------------------------------------------------------------------------------}
 procedure TForm1.idftp_ClientWorkBegin(Sender: TObject;
   AWorkMode: TWorkMode; const AWorkCountMax: Integer);
@@ -459,7 +451,7 @@ begin
   FAverageSpeed := 0;
 end;
 {-------------------------------------------------------------------------------
- Description: ¶ÁĞ´²Ù×÷Íê³ÉÖ®ºóµÄÊÂ¼ş
+ Description: è¯»å†™æ“ä½œå®Œæˆä¹‹åçš„äº‹ä»¶
 -------------------------------------------------------------------------------}
 procedure TForm1.idftp_ClientWorkEnd(Sender: TObject;
   AWorkMode: TWorkMode);
@@ -469,17 +461,17 @@ begin
   FBytesToTransfer := 0;
   pb_ShowWorking.Position := 0;
   FAverageSpeed := 0;
-  stat1.Panels[0].Text:= '´«ÊäÍê³É';
+  stat1.Panels[0].Text:= 'ä¼ è¾“å®Œæˆ';
 end;
 {-------------------------------------------------------------------------------
- Description: È¡Ïû°´Å¥
+ Description: å–æ¶ˆæŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_AbortClick(Sender: TObject);
 begin
   FAbortTransfer := True;
 end;
 {-------------------------------------------------------------------------------
- Description: ÉÏ´«°´Å¥
+ Description: ä¸Šä¼ æŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_UploadClick(Sender: TObject);
 begin
@@ -495,7 +487,7 @@ begin
   Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
- Description: É¾³ı°´Å¥
+ Description: åˆ é™¤æŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_DeleteClick(Sender: TObject);
   procedure DeleteDirectory(var idFTP: TIdFtp; RemoteDir: string);
@@ -511,7 +503,7 @@ procedure TForm1.btn_DeleteClick(Sender: TObject);
       idFTP.RemoveDir(RemoteDir);
       idFTP.List(nil);
       Application.ProcessMessages;
-      mmo_Log.Lines.Add('É¾³ıÎÄ¼ş¼Ğ£º' + Utf8ToAnsi(RemoteDir));
+      mmo_Log.Lines.Add('åˆ é™¤æ–‡ä»¶å¤¹ï¼š' + Utf8ToAnsi(RemoteDir));
       Exit;
     end;
     for i := 0 to 2 do
@@ -529,7 +521,7 @@ procedure TForm1.btn_DeleteClick(Sender: TObject);
       begin
         idFTP.Delete(strName);
         Application.ProcessMessages;
-        mmo_Log.Lines.Add('É¾³ıÎÄ¼ş£º' + Utf8ToAnsi(strName));
+        mmo_Log.Lines.Add('åˆ é™¤æ–‡ä»¶ï¼š' + Utf8ToAnsi(strName));
         DeleteDirectory(idFTP,RemoteDir);
       end;  
     end;
@@ -550,7 +542,7 @@ begin
       ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
     finally
     end
-  else       //É¾³ıµ¥¸öÎÄ¼ş
+  else       //åˆ é™¤å•ä¸ªæ–‡ä»¶
     try
       idftp_Client.Delete(strName);
       ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
@@ -559,7 +551,7 @@ begin
   Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
- Description: ĞÂ½¨Ä¿Â¼°´Å¥
+ Description: æ–°å»ºç›®å½•æŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_MKDirectoryClick(Sender: TObject);
 var
@@ -571,12 +563,12 @@ begin
   strName := Trim(tv1.Selected.Text);
   //idftp_Client.DirectoryListing.Items[lst_ServerList.ItemIndex].FileName;
 
-  //ÅĞ¶ÏÑ¡ÔñµÄÊÇÄ¿Â¼»¹ÊÇÎÄ¼ş£¬Ä¿Â¼£ºÖÃÎªÏÂ¼¶£¬ÎÄ¼ş£ºÖÃÎªÍ¬¼¶£»
+  //åˆ¤æ–­é€‰æ‹©çš„æ˜¯ç›®å½•è¿˜æ˜¯æ–‡ä»¶ï¼Œç›®å½•ï¼šç½®ä¸ºä¸‹çº§ï¼Œæ–‡ä»¶ï¼šç½®ä¸ºåŒçº§ï¼›
   isDir:=isDirectory(idftp_Client,AnsiToUtf8(getNodePath(tv1.Selected.Parent)),strName);
   if isDir then
     idftp_Client.ChangeDir(AnsiToUtf8(getNodePath(tv1.Selected)));
 
-  if InputQuery('ĞÂ½¨Ä¿Â¼','ÎÄ¼ş¼ĞÃû³Æ',S) and (Trim(S) <> '') then
+  if InputQuery('æ–°å»ºç›®å½•','æ–‡ä»¶å¤¹åç§°',S) and (Trim(S) <> '') then
   begin
     idftp_Client.MakeDir(AnsiToUtf8(S));
     Self.ChageDir(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
@@ -584,7 +576,7 @@ begin
   Self.FreshTree(orginDir);
 end;
 {-------------------------------------------------------------------------------
- Description: ÉÏ´«Ä¿Â¼°´Å¥
+ Description: ä¸Šä¼ ç›®å½•æŒ‰é’®
 -------------------------------------------------------------------------------}
 procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
   function DoUploadDir(idftp:TIdFTP;sDirName:String;sToDirName:String):Boolean;
@@ -594,7 +586,7 @@ procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
     sCurDir:String[255];
     FindFileData:WIN32_FIND_DATA;
   begin
-    //ÏÈ±£´æµ±Ç°Ä¿Â¼
+    //å…ˆä¿å­˜å½“å‰ç›®å½•
     sCurDir:=GetCurrentDir;
     ChDir(sDirName);
     idFTP.ChangeDir(AnsiToUtf8(sToDirName));
@@ -610,7 +602,7 @@ procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
         begin
           try
             IdFTP.MakeDir(AnsiToUtf8(tfile));
-            mmo_Log.Lines.Add('ĞÂ½¨ÎÄ¼ş¼Ğ£º' + tfile);
+            mmo_Log.Lines.Add('æ–°å»ºæ–‡ä»¶å¤¹ï¼š' + tfile);
           except
           end;
           DoUploadDir(idftp,sDirName+ '\'+tfile,tfile);
@@ -620,7 +612,7 @@ procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
         else
         begin
           IdFTP.Put(tfile, AnsiToUtf8(tfile));
-          mmo_Log.Lines.Add('ÉÏ´«ÎÄ¼ş£º' + tfile);
+          mmo_Log.Lines.Add('ä¸Šä¼ æ–‡ä»¶ï¼š' + tfile);
           Application.ProcessMessages;
         end;
       until   FindNextFile(hFindFile,FindFileData)=false;
@@ -631,7 +623,7 @@ procedure TForm1.btn_UploadDirectoryClick(Sender: TObject);
       result:=false;
       exit;
     end;
-    //»Øµ½Ô­À´µÄÄ¿Â¼ÏÂ
+    //å›åˆ°åŸæ¥çš„ç›®å½•ä¸‹
     ChDir(sCurDir);
     result:=true;
   end;
@@ -640,7 +632,7 @@ var
 begin
   if not CheckState then
     Exit;
-  if SelectDirectory('Ñ¡ÔñÉÏ´«Ä¿Â¼','',strPath) then
+  if SelectDirectory('é€‰æ‹©ä¸Šä¼ ç›®å½•','',strPath) then
   begin
     temp := Trim(Utf8ToAnsi(idftp_Client.RetrieveCurrentDir));
     strToPath := temp;
@@ -715,7 +707,7 @@ begin
   strPath:=getNodePath(Node);
   nodePath:=strPath;
   Self.ChageDir(strPath);
-  Self.Caption:=formName + 'µ±Ç°Ä¿Â¼:['+nodePath+']';
+  Self.Caption:=formName + 'å½“å‰ç›®å½•:['+nodePath+']';
   
   btn_Download.Enabled:=True;
 end;
